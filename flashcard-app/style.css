@@ -1,0 +1,94 @@
+/* --- 基础样式 --- */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: #fefcf5; /* 类似手帐的米黄色背景 */
+  margin: 0;
+  padding: 20px;
+  color: #333;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+header h1 {
+  color: #e56b6f; /* 可爱的红色 */
+}
+
+/* --- 1. 过滤器按钮样式 --- */
+#category-filters {
+  text-align: center;
+  margin-bottom: 30px;
+  display: flex;
+  flex-wrap: wrap; /* 按钮多的话会自动换行 */
+  justify-content: center;
+  gap: 10px; /* 按钮之间的间距 */
+}
+
+.filter-btn {
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #555;
+  background-color: #ffffff;
+  border: 2px solid #ddd;
+  border-radius: 20px; /* 圆角 */
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  background-color: #f0f0f0;
+  border-color: #ccc;
+}
+
+/* 选中状态的按钮 */
+.filter-btn.active {
+  color: #fff;
+  background-color: #e56b6f; /* 激活时的红色 */
+  border-color: #e56b6f;
+}
+
+/* --- 2. 卡片容器样式 --- */
+#card-container {
+  display: grid;
+  /* 响应式网格布局：
+     自动填充，每张卡片最小 200px，最大 1fr (平分)
+  */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px; /* 卡片之间的间距 */
+  padding: 10px;
+}
+
+/* --- 3. 单个卡片样式 --- */
+.flashcard {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eee;
+  overflow: hidden; /* 防止图片溢出圆角 */
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.flashcard:hover {
+  transform: translateY(-5px); /* 悬停时轻微上浮 */
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.flashcard img {
+  width: 100%; /* 图片宽度撑满卡片 */
+  height: auto;
+  display: block;
+}
+
+/* 如果你的卡片图片本身没有文字，可以用这个来显示单词 */
+/*
+.flashcard .word {
+  text-align: center;
+  font-weight: bold;
+  padding: 15px;
+  font-size: 20px;
+}
+*/
