@@ -87,26 +87,34 @@ mkdir -p posts todo
 echo ""
 echo "======================================================================"
 echo "请选择操作："
-echo "  1. 运行系统测试"
-echo "  2. 生成内容（标题+文章）"
-echo "  3. 只生成标题"
-echo "  4. 生成多篇文章"
-echo "  5. 🆕 每日自动生成（推荐）- 基于新闻搜索"
-echo "  6. 发布到CSDN"
-echo "  7. 运行演示"
-echo "  8. 查看帮助"
+echo "  1. 🌐 启动Web界面（推荐）- 可视化操作"
+echo "  2. 运行系统测试"
+echo "  3. 生成内容（标题+文章）"
+echo "  4. 只生成标题"
+echo "  5. 生成多篇文章"
+echo "  6. 🆕 每日自动生成 - 基于新闻搜索"
+echo "  7. 发布到CSDN"
+echo "  8. 运行演示"
+echo "  9. 查看帮助"
 echo "  0. 退出"
 echo "======================================================================"
 echo ""
 
-read -p "请输入选项 (0-8): " choice
+read -p "请输入选项 (0-9): " choice
 
 case $choice in
     1)
+        print_info "🌐 启动Web界面..."
+        print_success "界面将在浏览器中自动打开"
+        print_info "默认地址: http://localhost:7860"
+        echo ""
+        python ui.py
+        ;;
+    2)
         print_info "运行系统测试..."
         python test_system.py
         ;;
-    2)
+    3)
         read -p "请输入关键词 (留空使用最新趋势): " keyword
         if [ -z "$keyword" ]; then
             python auto_generate.py
@@ -114,7 +122,7 @@ case $choice in
             python auto_generate.py --keyword "$keyword"
         fi
         ;;
-    3)
+    4)
         read -p "生成多少个标题？(默认10): " count
         count=${count:-10}
         read -p "请输入关键词 (留空使用最新趋势): " keyword
@@ -124,12 +132,12 @@ case $choice in
             python auto_generate.py --titles-only --count $count --keyword "$keyword"
         fi
         ;;
-    4)
+    5)
         read -p "生成多少篇文章？(默认5): " articles
         articles=${articles:-5}
         python auto_generate.py --generate-articles $articles
         ;;
-    5)
+    6)
         print_info "🆕 每日自动生成 - 基于智谱Web Search"
         echo ""
         echo "这个功能将："
@@ -144,28 +152,35 @@ case $choice in
             python auto_generate_daily.py --articles $articles
         fi
         ;;
-    6)
+    7)
         print_info "启动CSDN发布程序..."
         print_warning "首次运行需要在浏览器中登录CSDN"
         python publish_csdn.py --headless false
         ;;
-    7)
+    8)
         print_info "运行功能演示..."
         python demo.py 1
         ;;
-    8)
+    9)
         print_info "显示帮助信息..."
         echo ""
         echo "命令行使用方法："
         echo ""
+        echo "  # 启动Web界面（推荐）"
+        echo "  python ui.py"
+        echo ""
         echo "  # 生成内容"
         echo "  python auto_generate.py --keyword '关键词' --generate-articles 5"
+        echo ""
+        echo "  # 每日自动生成"
+        echo "  python auto_generate_daily.py --articles 10"
         echo ""
         echo "  # 发布文章"
         echo "  python publish_csdn.py"
         echo ""
         echo "  # 查看详细帮助"
         echo "  python auto_generate.py --help"
+        echo "  python auto_generate_daily.py --help"
         echo "  python publish_csdn.py --help"
         echo ""
         echo "更多信息请查看: README_NEW.md 或 QUICKSTART.md"

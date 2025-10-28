@@ -2,3 +2,4 @@ playwright==1.44.0
 pyperclip==1.8.9
 python-frontmatter==1.1.0
 zhipuai>=2.0.0
+gradio
