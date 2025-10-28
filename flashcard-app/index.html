@@ -3,21 +3,210 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>可爱单词卡片</title>
+  <title>FlashCard Pro - 智能单词学习</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-
-  <header>
-    <h1>我的单词卡片</h1>
-    <p>点击卡片听发音</p>
+  <!-- 顶部导航栏 -->
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">
+        <i class="fas fa-graduation-cap"></i>
+        <h1>FlashCard Pro</h1>
+      </div>
+      
+      <div class="header-controls">
+        <!-- 搜索框 -->
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" id="search-input" placeholder="搜索单词...">
+          <button class="clear-search" id="clear-search">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <!-- 工具按钮组 -->
+        <div class="toolbar">
+          <button class="tool-btn" id="stats-btn" title="学习统计">
+            <i class="fas fa-chart-line"></i>
+          </button>
+          <button class="tool-btn" id="quiz-btn" title="测验模式">
+            <i class="fas fa-brain"></i>
+          </button>
+          <button class="tool-btn" id="add-card-btn" title="添加卡片">
+            <i class="fas fa-plus"></i>
+          </button>
+          <button class="tool-btn" id="theme-toggle" title="切换主题">
+            <i class="fas fa-moon"></i>
+          </button>
+        </div>
+      </div>
+    </div>
   </header>
 
-  <nav id="category-filters">
-    </nav>
+  <!-- 统计面板 -->
+  <div class="stats-panel" id="stats-panel">
+    <div class="stats-header">
+      <h2><i class="fas fa-chart-pie"></i> 学习统计</h2>
+      <button class="close-btn" id="close-stats">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="stats-content">
+      <div class="stat-card">
+        <i class="fas fa-book"></i>
+        <div class="stat-info">
+          <div class="stat-value" id="total-cards">0</div>
+          <div class="stat-label">总单词数</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-heart"></i>
+        <div class="stat-info">
+          <div class="stat-value" id="favorite-cards">0</div>
+          <div class="stat-label">收藏数</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-check-circle"></i>
+        <div class="stat-info">
+          <div class="stat-value" id="learned-cards">0</div>
+          <div class="stat-label">已掌握</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-clock"></i>
+        <div class="stat-info">
+          <div class="stat-value" id="study-time">0</div>
+          <div class="stat-label">学习时长(分钟)</div>
+        </div>
+      </div>
+    </div>
+    <div class="progress-section">
+      <h3>学习进度</h3>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <p class="progress-text" id="progress-text">已掌握 0%</p>
+    </div>
+  </div>
 
-  <main id="card-container">
-    </main>
+  <!-- 添加卡片模态框 -->
+  <div class="modal" id="add-card-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="fas fa-plus-circle"></i> 添加新卡片</h2>
+        <button class="close-btn" id="close-add-modal">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <form id="add-card-form">
+        <div class="form-group">
+          <label for="new-word">单词</label>
+          <input type="text" id="new-word" required placeholder="输入单词">
+        </div>
+        <div class="form-group">
+          <label for="new-category">分类</label>
+          <input type="text" id="new-category" required placeholder="如: Animals, Food">
+        </div>
+        <div class="form-group">
+          <label for="new-image">图片URL</label>
+          <input type="url" id="new-image" required placeholder="图片链接">
+        </div>
+        <div class="form-group">
+          <label for="new-audio">音频URL (可选)</label>
+          <input type="url" id="new-audio" placeholder="音频链接">
+        </div>
+        <div class="form-group">
+          <label for="new-translation">中文翻译</label>
+          <input type="text" id="new-translation" placeholder="单词的中文意思">
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="cancel-add">取消</button>
+          <button type="submit" class="btn btn-primary">添加</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 测验模式 -->
+  <div class="modal quiz-modal" id="quiz-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="fas fa-brain"></i> 单词测验</h2>
+        <button class="close-btn" id="close-quiz">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="quiz-content" id="quiz-content">
+        <div class="quiz-progress">
+          <span id="quiz-current">1</span> / <span id="quiz-total">10</span>
+        </div>
+        <div class="quiz-card">
+          <img id="quiz-image" src="" alt="猜猜这是什么？">
+        </div>
+        <div class="quiz-options" id="quiz-options">
+          <!-- 动态生成选项 -->
+        </div>
+        <div class="quiz-result" id="quiz-result"></div>
+      </div>
+      <div class="quiz-score" id="quiz-score" style="display:none;">
+        <h3>测验完成！</h3>
+        <div class="score-display">
+          <i class="fas fa-trophy"></i>
+          <p>得分: <span id="final-score">0</span>/10</p>
+        </div>
+        <button class="btn btn-primary" id="restart-quiz">再来一次</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 主要控制面板 -->
+  <div class="control-panel">
+    <div class="view-controls">
+      <label>排序:</label>
+      <select id="sort-select">
+        <option value="default">默认</option>
+        <option value="alphabetical">字母顺序</option>
+        <option value="recent">最近添加</option>
+        <option value="favorites">收藏优先</option>
+      </select>
+      
+      <label>视图:</label>
+      <div class="view-toggle">
+        <button class="view-btn active" data-view="grid">
+          <i class="fas fa-th"></i>
+        </button>
+        <button class="view-btn" data-view="list">
+          <i class="fas fa-list"></i>
+        </button>
+      </div>
+    </div>
+    
+    <!-- 分类过滤器 -->
+    <nav id="category-filters" class="category-filters">
+    </nav>
+  </div>
+
+  <!-- 卡片容器 -->
+  <main id="card-container" class="card-container">
+  </main>
+
+  <!-- 空状态提示 -->
+  <div class="empty-state" id="empty-state" style="display: none;">
+    <i class="fas fa-search"></i>
+    <h3>没有找到匹配的单词</h3>
+    <p>试试其他搜索词或分类吧</p>
+  </div>
+
+  <!-- 音频播放提示 -->
+  <div class="audio-indicator" id="audio-indicator">
+    <i class="fas fa-volume-up"></i>
+  </div>
+
+  <!-- Toast 通知 -->
+  <div class="toast" id="toast"></div>
 
   <script src="data.js"></script>
   <script src="script.js"></script>
