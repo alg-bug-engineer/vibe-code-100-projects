@@ -358,6 +358,97 @@ def click_publish_buttons(page, tags=None) -> bool:
         except Exception as e:
             print(f"ensure_tags_in_modal 出错: {e}")
             return False
+
+    def set_fans_visible_in_modal(page, container_selector):
+        """在发布弹窗中设置可见范围为'粉丝可见'"""
+        try:
+            # 尝试多种可能的选择器来找到"粉丝可见"选项
+            fans_visible_selectors = [
+                f'{container_selector} label[for="needfans"]',
+                f'{container_selector} .lab-switch',
+                f'{container_selector} label:has-text("粉丝可见")',
+                'label[for="needfans"]',
+                'label.lab-switch:has-text("粉丝可见")',
+                'label:has-text("粉丝可见")'
+            ]
+            
+            for selector in fans_visible_selectors:
+                try:
+                    locator = page.locator(selector).first
+                    locator.wait_for(state="visible", timeout=3000)
+                    
+                    # 检查是否已经被选中
+                    # 先尝试找到对应的input元素检查状态
+                    input_selector = f'{container_selector} input#needfans'
+                    try:
+                        input_locator = page.locator(input_selector).first
+                        is_checked = input_locator.is_checked()
+                        if is_checked:
+                            print("'粉丝可见'选项已经被选中")
+                            return True
+                    except Exception:
+                        # 如果无法检查状态，直接点击
+                        pass
+                    
+                    # 滚动到视图并点击
+                    locator.scroll_into_view_if_needed()
+                    locator.click(timeout=5000)
+                    print(f"已点击'粉丝可见'选项 (selector={selector})")
+                    
+                    # 短暂等待以确保状态更新
+                    time.sleep(0.5)
+                    return True
+                    
+                except Exception as e:
+                    print(f"尝试使用选择器 {selector} 点击'粉丝可见'失败: {e}")
+                    continue
+            
+            # 如果标准选择器都失败，尝试JS方式查找并点击
+            try:
+                js_result = page.evaluate("""
+                    () => {
+                        // 查找包含"粉丝可见"文本的label元素
+                        const labels = Array.from(document.querySelectorAll('label'));
+                        for (const label of labels) {
+                            if (label.textContent && label.textContent.includes('粉丝可见')) {
+                                // 检查对应的input是否已选中
+                                const forAttr = label.getAttribute('for');
+                                if (forAttr) {
+                                    const input = document.getElementById(forAttr);
+                                    if (input && input.type === 'checkbox' && !input.checked) {
+                                        label.scrollIntoView();
+                                        label.click();
+                                        return true;
+                                    } else if (input && input.checked) {
+                                        return 'already_checked';
+                                    }
+                                }
+                                // 如果找不到对应input，直接点击label
+                                label.scrollIntoView();
+                                label.click();
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                """)
+                
+                if js_result == True:
+                    print("已使用JS方式点击'粉丝可见'选项")
+                    return True
+                elif js_result == 'already_checked':
+                    print("'粉丝可见'选项已经被选中")
+                    return True
+                    
+            except Exception as e:
+                print(f"JS方式点击'粉丝可见'失败: {e}")
+            
+            print("未能找到或点击'粉丝可见'选项")
+            return False
+            
+        except Exception as e:
+            print(f"set_fans_visible_in_modal 出错: {e}")
+            return False
             
     for container in modal_containers:
         try:
@@ -382,6 +473,13 @@ def click_publish_buttons(page, tags=None) -> bool:
                         pass
             except Exception as e_tag:
                 print(f"添加标签时出错: {e_tag}")
+
+            # 设置可见范围为"粉丝可见"
+            try:
+                print("尝试设置可见范围为'粉丝可见'")
+                set_fans_visible_in_modal(page, container_selector=container)
+            except Exception as e_visible:
+                print(f"设置粉丝可见时出错: {e_visible}")
 
             btn_locator = page.locator(f'{container} >> button.btn-b-red:visible').first
             if btn_locator:
