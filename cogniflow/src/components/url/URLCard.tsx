@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Calendar, Tag, Trash2 } from 'lucide-react';
+import { ExternalLink, Calendar, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import type { Item } from '@/types/types';
@@ -19,12 +19,12 @@ export function URLCard({ item, onDelete }: URLCardProps) {
   };
 
   return (
-    <Card className="group hover:shadow-md transition-shadow">
+    <Card className="group hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-800">
       <CardContent className="p-4">
-        <div className="flex gap-4">
-          {/* 左侧缩略图 - 固定宽度 */}
+        <div className="flex gap-3">
+          {/* 左侧缩略图 - 统一尺寸 */}
           {item.url_thumbnail && (
-            <div className="w-32 h-24 flex-shrink-0 rounded-md overflow-hidden bg-muted">
+            <div className="w-24 h-24 flex-shrink-0 rounded-md overflow-hidden bg-muted">
               <img
                 src={item.url_thumbnail}
                 alt={item.url_title || '网站缩略图'}
@@ -40,9 +40,9 @@ export function URLCard({ item, onDelete }: URLCardProps) {
           {/* 右侧内容 */}
           <div className="flex-1 min-w-0 flex flex-col gap-2">
             {/* 标题和操作按钮 */}
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start justify-between gap-2">
               <h3 
-                className="font-semibold text-base leading-tight cursor-pointer hover:text-primary transition-colors line-clamp-2"
+                className="font-medium text-base leading-tight cursor-pointer hover:text-primary transition-colors line-clamp-2"
                 onClick={handleOpenURL}
                 title={item.url_title || item.title || '未知标题'}
               >
@@ -54,7 +54,7 @@ export function URLCard({ item, onDelete }: URLCardProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 w-7 p-0"
+                  className="h-7 w-7 p-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg shadow-sm"
                   onClick={handleOpenURL}
                   title="打开链接"
                 >
@@ -64,57 +64,52 @@ export function URLCard({ item, onDelete }: URLCardProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 w-7 p-0"
+                    className="h-7 w-7 p-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg shadow-sm"
                     onClick={() => onDelete(item.id)}
                     title="删除"
                   >
-                    <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                    <Trash2 className="w-3.5 h-3.5 text-red-500" />
                   </Button>
                 )}
               </div>
             </div>
 
-            {/* 摘要 */}
+            {/* 摘要 - 限制为2行 */}
             {item.url_summary && (
-              <p className="text-sm text-muted-foreground line-clamp-2">
+              <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
                 {item.url_summary}
               </p>
             )}
 
             {/* 底部信息：URL、标签、时间 */}
-            <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground mt-auto">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
               {/* URL */}
               {item.url && (
-                <div className="flex items-center gap-1 min-w-0 flex-1">
-                  <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                <div className="flex items-center gap-1 min-w-0 max-w-[180px]">
+                  <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
                   <span className="truncate">{new URL(item.url).hostname}</span>
                 </div>
               )}
 
-              {/* 标签 */}
+              {/* 标签 - 最多显示2个 */}
               {item.tags && item.tags.length > 0 && (
-                <div className="flex items-center gap-1">
-                  <Tag className="w-3 h-3 flex-shrink-0" />
-                  <div className="flex gap-1">
-                    {item.tags.slice(0, 2).map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs h-5">
-                        {tag}
-                      </Badge>
-                    ))}
-                    {item.tags.length > 2 && (
-                      <Badge variant="secondary" className="text-xs h-5">
-                        +{item.tags.length - 2}
-                      </Badge>
-                    )}
-                  </div>
+                <div className="flex items-center gap-1.5">
+                  {item.tags.slice(0, 2).map((tag) => (
+                    <Badge key={tag} variant="secondary" className="text-xs h-5 px-2">
+                      {tag}
+                    </Badge>
+                  ))}
+                  {item.tags.length > 2 && (
+                    <span className="text-xs text-muted-foreground">+{item.tags.length - 2}</span>
+                  )}
                 </div>
               )}
 
               {/* 时间 */}
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <Calendar className="w-3 h-3" />
-                <span>
-                  {format(new Date(item.created_at), 'yyyy-MM-dd', { locale: zhCN })}
+              <div className="flex items-center gap-1 ml-auto flex-shrink-0">
+                <Calendar className="w-3.5 h-3.5" />
+                <span className="text-xs">
+                  {format(new Date(item.created_at), 'MM-dd', { locale: zhCN })}
                 </span>
               </div>
             </div>

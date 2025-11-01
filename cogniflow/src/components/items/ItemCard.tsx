@@ -185,35 +185,81 @@ export default function ItemCard({ item, onUpdate }: ItemCardProps) {
                   </TooltipProvider>
                 )}
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge className={`${typeColors[item.type]} text-xs px-2 py-0.5 font-normal`}>
-                  {typeLabels[item.type]}
-                </Badge>
-                {item.due_date && (
-                  <div className={`
-                    flex items-center gap-1 text-xs px-2 py-0.5 rounded-md
-                    ${isOverdue 
-                      ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' 
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}
-                  `}>
-                    {isOverdue && <AlertCircle className="h-3 w-3" />}
-                    <Calendar className="h-3 w-3" />
-                    <span className="font-medium">
-                      {isToday(new Date(item.due_date))
-                        ? '今天'
-                        : format(new Date(item.due_date), 'MM月dd日 HH:mm', { locale: zhCN })}
-                    </span>
+              
+              {/* 日程类型：显示完整的日期时间信息 */}
+              {item.type === 'event' && (item.start_time || item.due_date) && (
+                <div className="mb-3 p-3 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-100 dark:border-blue-900/50">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                    <div className="flex-1">
+                      {item.start_time && item.end_time ? (
+                        <div className="space-y-1">
+                          <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                            {format(new Date(item.start_time), 'yyyy年MM月dd日 EEEE', { locale: zhCN })}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
+                            <span className="font-medium">
+                              {format(new Date(item.start_time), 'HH:mm', { locale: zhCN })}
+                            </span>
+                            <span className="text-blue-400">→</span>
+                            <span className="font-medium">
+                              {format(new Date(item.end_time), 'HH:mm', { locale: zhCN })}
+                            </span>
+                            <span className="text-xs text-blue-600 dark:text-blue-400 ml-1">
+                              ({Math.round((new Date(item.end_time).getTime() - new Date(item.start_time).getTime()) / 60000)}分钟)
+                            </span>
+                          </div>
+                        </div>
+                      ) : item.due_date && (
+                        <div className="space-y-1">
+                          <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                            {format(new Date(item.due_date), 'yyyy年MM月dd日 EEEE', { locale: zhCN })}
+                          </div>
+                          <div className="text-sm text-blue-700 dark:text-blue-300">
+                            <span className="font-medium">
+                              {format(new Date(item.due_date), 'HH:mm', { locale: zhCN })}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-                {item.start_time && item.end_time && (
-                  <div className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
-                    <Calendar className="h-3 w-3" />
-                    <span className="font-medium">
-                      {format(new Date(item.start_time), 'HH:mm')} - {format(new Date(item.end_time), 'HH:mm')}
-                    </span>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
+              
+              {/* 非日程类型：保持原有的简洁显示 */}
+              {item.type !== 'event' && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge className={`${typeColors[item.type]} text-xs px-2 py-0.5 font-normal`}>
+                    {typeLabels[item.type]}
+                  </Badge>
+                  {item.due_date && (
+                    <div className={`
+                      flex items-center gap-1 text-xs px-2 py-0.5 rounded-md
+                      ${isOverdue 
+                        ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' 
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}
+                    `}>
+                      {isOverdue && <AlertCircle className="h-3 w-3" />}
+                      <Calendar className="h-3 w-3" />
+                      <span className="font-medium">
+                        {isToday(new Date(item.due_date))
+                          ? '今天'
+                          : format(new Date(item.due_date), 'MM月dd日 HH:mm', { locale: zhCN })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* 日程类型也显示类型标签 */}
+              {item.type === 'event' && (
+                <div className="flex items-center gap-2 flex-wrap mt-2">
+                  <Badge className={`${typeColors[item.type]} text-xs px-2 py-0.5 font-normal`}>
+                    {typeLabels[item.type]}
+                  </Badge>
+                </div>
+              )}
             </div>
           </div>
         </CardHeader>

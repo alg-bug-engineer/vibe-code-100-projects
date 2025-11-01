@@ -12,7 +12,7 @@ import TagCard from '@/components/tags/TagCard';
 import { URLCard } from '@/components/url/URLCard';
 import CalendarView from '@/components/calendar/CalendarView';
 import ReportView from '@/components/report/ReportView';
-import { itemApi } from '@/db/localApi';
+import { itemApi } from '@/db/api';
 import type { Item, TagStats } from '@/types/types';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -42,6 +42,7 @@ export default function Dashboard() {
   const [processingItems, setProcessingItems] = useState<ProcessingItem[]>([]);
 
   const loadData = async () => {
+    console.log('🔄 开始加载数据...');
     const [upcoming, todos, inbox, urls, archived, tags, history] = await Promise.all([
       itemApi.getUpcomingItems(),
       itemApi.getTodoItems(),
@@ -51,6 +52,16 @@ export default function Dashboard() {
       itemApi.getTagStats(),
       itemApi.getAllItemsHistory()
     ]);
+
+    console.log('📊 数据加载完成:', {
+      upcoming: upcoming.length,
+      todos: todos.length,
+      inbox: inbox.length,
+      urls: urls.length,
+      archived: archived.length,
+      tags: tags.length,
+      history: history.length
+    });
 
     setUpcomingItems(upcoming);
     setTodoItems(todos);
@@ -167,8 +178,8 @@ export default function Dashboard() {
                 待办清单
               </TabsTrigger>
               <TabsTrigger value="inbox" className="flex items-center gap-2">
-                <Inbox className="h-4 w-4" />
-                收件箱
+                <FileText className="h-4 w-4" />
+                笔记
               </TabsTrigger>
               <TabsTrigger value="links" className="flex items-center gap-2">
                 <LinkIcon className="h-4 w-4" />
@@ -253,12 +264,27 @@ export default function Dashboard() {
               {inboxItems.length === 0 ? (
                 <div className="text-center py-12">
                   <Inbox className="h-16 w-16 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">收件箱为空</p>
+                  <p className="text-gray-500 dark:text-gray-400">笔记本为空</p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
+                    记录想法、知识和灵感
+                  </p>
                 </div>
               ) : (
-                inboxItems.map((item) => (
-                  <ItemCard key={item.id} item={item} onUpdate={loadData} />
-                ))
+                <div>
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                      我的笔记
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      共 {inboxItems.length} 条记录性内容
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    {inboxItems.map((item) => (
+                      <ItemCard key={item.id} item={item} onUpdate={loadData} />
+                    ))}
+                  </div>
+                </div>
               )}
             </TabsContent>
 

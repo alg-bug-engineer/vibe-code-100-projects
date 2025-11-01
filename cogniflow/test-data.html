@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>数据调试工具</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover { background: #45a049; }
+    .output {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+    tr:hover { background-color: #f5f5f5; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .badge-task { background: #2196F3; color: white; }
+    .badge-note { background: #FF9800; color: white; }
+    .badge-url { background: #9C27B0; color: white; }
+    .badge-event { background: #4CAF50; color: white; }
+    .badge-data { background: #607D8B; color: white; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 CogniFlow 数据调试工具</h1>
+    <p>用于检查和调试本地存储的用户数据</p>
+    
+    <div>
+      <button onclick="checkCurrentUser()">检查当前用户</button>
+      <button onclick="showAllData()">显示所有数据</button>
+      <button onclick="showItemsTable()">显示条目表格</button>
+      <button onclick="clearOutput()">清空输出</button>
+    </div>
+    
+    <div id="output" class="output"></div>
+  </div>
+
+  <script>
+    function log(message, data) {
+      const output = document.getElementById('output');
+      const time = new Date().toLocaleTimeString();
+      output.innerHTML += `[${time}] ${message}\n`;
+      if (data) {
+        output.innerHTML += JSON.stringify(data, null, 2) + '\n\n';
+      }
+    }
+
+    function clearOutput() {
+      document.getElementById('output').innerHTML = '';
+    }
+
+    function checkCurrentUser() {
+      clearOutput();
+      const currentUser = localStorage.getItem('cogniflow_current_user');
+      
+      if (!currentUser) {
+        log('❌ 未找到当前用户');
+        return;
+      }
+      
+      log('✅ 当前用户ID:', currentUser);
+      
+      // 获取用户数据
+      const userDataKey = `cogniflow_user_data_${currentUser}`;
+      const userDataStr = localStorage.getItem(userDataKey);
+      
+      if (!userDataStr) {
+        log('❌ 未找到用户数据');
+        return;
+      }
+      
+      const userData = JSON.parse(userDataStr);
+      log(`📊 用户数据统计:`, {
+        用户ID: currentUser,
+        条目总数: userData.items?.length || 0,
+        标签总数: userData.tags?.length || 0,
+        最后修改: userData.lastModified
+      });
+      
+      // 统计各类型条目
+      if (userData.items && userData.items.length > 0) {
+        const typeStats = {};
+        const statusStats = {};
+        
+        userData.items.forEach(item => {
+          typeStats[item.type] = (typeStats[item.type] || 0) + 1;
+          statusStats[item.status] = (statusStats[item.status] || 0) + 1;
+        });
+        
+        log('📈 类型统计:', typeStats);
+        log('📈 状态统计:', statusStats);
+        
+        // 显示最近的5条记录
+        const recentItems = userData.items
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 5);
+        
+        log('🆕 最近的5条记录:');
+        recentItems.forEach((item, index) => {
+          log(`  ${index + 1}. [${item.type}] ${item.title} (${item.status})`);
+        });
+      }
+    }
+
+    function showAllData() {
+      clearOutput();
+      const currentUser = localStorage.getItem('cogniflow_current_user');
+      
+      if (!currentUser) {
+        log('❌ 未找到当前用户');
+        return;
+      }
+      
+      const userDataKey = `cogniflow_user_data_${currentUser}`;
+      const userDataStr = localStorage.getItem(userDataKey);
+      
+      if (!userDataStr) {
+        log('❌ 未找到用户数据');
+        return;
+      }
+      
+      const userData = JSON.parse(userDataStr);
+      log('📦 完整用户数据:', userData);
+    }
+
+    function showItemsTable() {
+      const currentUser = localStorage.getItem('cogniflow_current_user');
+      
+      if (!currentUser) {
+        alert('未找到当前用户');
+        return;
+      }
+      
+      const userDataKey = `cogniflow_user_data_${currentUser}`;
+      const userDataStr = localStorage.getItem(userDataKey);
+      
+      if (!userDataStr) {
+        alert('未找到用户数据');
+        return;
+      }
+      
+      const userData = JSON.parse(userDataStr);
+      const items = userData.items || [];
+      
+      if (items.length === 0) {
+        document.getElementById('output').innerHTML = '<p>没有找到任何条目</p>';
+        return;
+      }
+      
+      // 创建表格
+      let html = `
+        <h3>条目列表 (共 ${items.length} 条)</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>类型</th>
+              <th>标题</th>
+              <th>状态</th>
+              <th>标签</th>
+              <th>创建时间</th>
+              <th>归档</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      
+      items
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .forEach(item => {
+          const badgeClass = `badge badge-${item.type}`;
+          const tags = item.tags ? item.tags.join(', ') : '-';
+          const archived = item.archived_at ? '✅' : '❌';
+          const createdAt = new Date(item.created_at).toLocaleString('zh-CN');
+          
+          html += `
+            <tr>
+              <td>${item.id.substring(0, 8)}...</td>
+              <td><span class="${badgeClass}">${item.type}</span></td>
+              <td>${item.title || '-'}</td>
+              <td>${item.status}</td>
+              <td>${tags}</td>
+              <td>${createdAt}</td>
+              <td>${archived}</td>
+            </tr>
+          `;
+        });
+      
+      html += `
+          </tbody>
+        </table>
+      `;
+      
+      document.getElementById('output').innerHTML = html;
+    }
+
+    // 页面加载时自动检查
+    window.onload = function() {
+      checkCurrentUser();
+    };
+  </script>
+</body>
+</html>

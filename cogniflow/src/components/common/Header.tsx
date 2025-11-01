@@ -1,13 +1,40 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
-import { Shield, Download, Upload } from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Shield, Download, Upload, User, LogOut } from "lucide-react";
 import { useLocalAuth, exportData, importData } from "@/db/api";
 import { toast } from "sonner";
 
 export default function Header() {
-  const { user, isAdmin } = useLocalAuth();
+  const { user, isAdmin, logout } = useLocalAuth();
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    toast.success('已登出');
+    navigate('/login');
+  };
+
+  const getUserDisplayName = () => {
+    if (user?.username) return user.username;
+    if (user?.email) return user.email.split('@')[0];
+    return '用户';
+  };
+
+  const getUserInitials = () => {
+    const name = getUserDisplayName();
+    return name.slice(0, 2).toUpperCase();
+  };
 
   const handleExport = async () => {
     try {
@@ -76,6 +103,63 @@ export default function Header() {
               </>
             )}
             <ModeToggle />
+            
+            {/* 用户菜单 */}
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src="" alt={getUserDisplayName()} />
+                      <AvatarFallback className="text-xs">
+                        {getUserInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {getUserDisplayName()}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email || '无邮箱'}
+                      </p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Badge variant="secondary" className="text-xs">
+                          {user.role === 'admin' ? '管理员' : '用户'}
+                        </Badge>
+                        {user.username && (
+                          <Badge variant="outline" className="text-xs">
+                            @{user.username}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>个人资料</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/admin')} disabled={!isAdmin}>
+                    <Shield className="mr-2 h-4 w-4" />
+                    <span>系统管理</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>登出</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
+                <User className="h-4 w-4 mr-2" />
+                登录
+              </Button>
+            )}
           </nav>
         </div>
       </div>

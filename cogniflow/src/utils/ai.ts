@@ -272,13 +272,14 @@ export async function processTextWithAI(text: string): Promise<AIProcessResult> 
 - 本周五（或下周五）: ${thisFridayStr}
 
 分析规则:
-1. type: 判断类型
-   - task: 需要完成的具体任务,包含动作词如:
+1. type: **必填项**，判断类型。如果无法确定类型，**默认使用 'task'**
+   - task: 需要完成的具体任务（**默认类型**）,包含动作词如:
      * "买"、"购买"、"下单" → 购物任务
      * "做"、"完成"、"整理" → 工作任务  
      * "写"、"发送"、"发布" → 创作任务
      * "记得"、"提醒"、"不要忘记" → 提醒任务
      * "学习"、"复习"、"练习" → 学习任务
+     * **任何带动作意图的描述都应该是 task**
    - event: 有明确时间的活动安排,如:
      * "开会"、"会议"、"面试"
      * "约"、"聚会"、"活动" 
@@ -288,6 +289,8 @@ export async function processTextWithAI(text: string): Promise<AIProcessResult> 
      * "灵感:"、"想法:"、"记录:"
      * 纯信息记录,无明确动作
    - data: 信息、资料、链接、参考内容
+   
+   **重要**: type 字段不能为空或 null，如果不确定，必须返回 'task'
 
 2. title: 提取核心主题(10字以内)
 
@@ -382,8 +385,13 @@ export async function processTextWithAI(text: string): Promise<AIProcessResult> 
 
           const result = JSON.parse(jsonStr);
 
+          // 确保类型有效，如果为空或无效，默认使用 'task'
+          const validTypes: ItemType[] = ['task', 'event', 'note', 'data', 'url'];
+          const resultType = result.type as ItemType;
+          const finalType: ItemType = validTypes.includes(resultType) ? resultType : 'task';
+
           const processedResult: AIProcessResult = {
-            type: (result.type || 'note') as ItemType,
+            type: finalType,
             title: result.title || text.substring(0, 30),
             description: result.description || text,
             due_date: result.due_date || null,
@@ -397,8 +405,9 @@ export async function processTextWithAI(text: string): Promise<AIProcessResult> 
           resolve(processedResult);
         } catch (error) {
           console.error('解析AI响应失败:', error, fullResponse);
+          // 解析失败时，默认使用 'task' 类型
           resolve({
-            type: 'note',
+            type: 'task',
             title: text.substring(0, 30),
             description: text,
             due_date: null,

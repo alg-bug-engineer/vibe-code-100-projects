@@ -6,6 +6,7 @@
 
 import { generateUUID, IndexedDBHelper, STORES } from './indexeddb';
 import type { Profile, UserRole } from '@/types/types';
+import { LocalStorageManager, type UserStorageRecord } from '@/services/localStorageManager';
 
 const CURRENT_USER_KEY = 'cogniflow_current_user';
 const DEFAULT_USER_ID = 'local-user-001';
@@ -15,10 +16,31 @@ const DEFAULT_USER_ID = 'local-user-001';
  */
 export interface LocalUser {
   id: string;
+  username?: string;
   phone: string | null;
   email: string | null;
   role: UserRole;
   created_at: string;
+}
+
+/**
+ * 注册用户数据接口
+ */
+export interface RegisterUserData {
+  username: string;
+  email: string;
+  phone?: string;
+  password: string;
+}
+
+/**
+ * 登录用户数据接口
+ */
+export interface LoginUserData {
+  username?: string;
+  email?: string;
+  phone?: string;
+  password: string;
 }
 
 /**
@@ -36,23 +58,31 @@ class LocalAuth {
     const stored = localStorage.getItem(CURRENT_USER_KEY);
     if (stored) {
       try {
-        this.currentUser = JSON.parse(stored);
+        const user = JSON.parse(stored);
+        // 验证用户是否仍然存在
+        const userRecord = await LocalStorageManager.getUserById(user.id);
+        if (userRecord) {
+          this.currentUser = user;
+        } else {
+          // 用户记录已被删除，清除当前用户
+          localStorage.removeItem(CURRENT_USER_KEY);
+          this.currentUser = null;
+        }
       } catch (error) {
         console.error('解析用户信息失败:', error);
         localStorage.removeItem(CURRENT_USER_KEY);
+        this.currentUser = null;
       }
     }
-
-    // 如果没有用户，创建默认用户
-    if (!this.currentUser) {
-      await this.createDefaultUser();
-    }
+    
+    // 不再自动创建默认用户，让用户必须注册或登录
+    // 如果需要快速登录功能，用户可以在登录页面使用"快速登录"
   }
 
   /**
-   * 创建默认用户
+   * 创建默认用户（用于快速登录）
    */
-  private async createDefaultUser(): Promise<void> {
+  async createDefaultUser(): Promise<LocalUser> {
     const defaultUser: LocalUser = {
       id: DEFAULT_USER_ID,
       phone: null,
@@ -77,6 +107,7 @@ class LocalAuth {
 
     // 设置为当前用户
     this.setCurrentUser(defaultUser);
+    return defaultUser;
   }
 
   /**
@@ -103,10 +134,113 @@ class LocalAuth {
   }
 
   /**
-   * 登录（简化版，直接使用默认用户）
+   * 用户注册
+   */
+  async register(userData: RegisterUserData): Promise<LocalUser> {
+    try {
+      // 检查用户名格式
+      if (!userData.username || userData.username.length < 3) {
+        throw new Error('用户名至少需要3个字符');
+      }
+
+      // 检查密码格式
+      if (!userData.password || userData.password.length < 6) {
+        throw new Error('密码至少需要6个字符');
+      }
+
+      // 检查邮箱格式
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(userData.email)) {
+        throw new Error('请输入有效的邮箱地址');
+      }
+
+      // 创建用户记录
+      const userRecord = await LocalStorageManager.createUser({
+        username: userData.username,
+        email: userData.email,
+        phone: userData.phone || null,
+        passwordHash: LocalStorageManager.hashPassword(userData.password),
+        role: 'user'
+      });
+
+      // 转换为LocalUser格式
+      const localUser: LocalUser = {
+        id: userRecord.id,
+        username: userRecord.username,
+        phone: userRecord.phone,
+        email: userRecord.email,
+        role: userRecord.role as UserRole,
+        created_at: userRecord.createdAt
+      };
+
+      // 设置为当前用户
+      this.setCurrentUser(localUser);
+
+      return localUser;
+    } catch (error) {
+      console.error('用户注册失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 用户登录（带密码验证）
+   */
+  async loginWithPassword(userData: LoginUserData): Promise<LocalUser> {
+    try {
+      let userRecord: UserStorageRecord | null = null;
+
+      // 根据不同的登录方式查找用户
+      if (userData.username) {
+        userRecord = await LocalStorageManager.getUserByUsername(userData.username);
+      } else if (userData.email) {
+        userRecord = await LocalStorageManager.getUserByEmail(userData.email);
+      } else {
+        throw new Error('请输入用户名或邮箱');
+      }
+
+      if (!userRecord) {
+        throw new Error('用户不存在');
+      }
+
+      // 验证密码
+      if (!LocalStorageManager.verifyPassword(userData.password, userRecord.passwordHash)) {
+        throw new Error('密码错误');
+      }
+
+      // 更新最后登录时间
+      await LocalStorageManager.updateLastLogin(userRecord.id);
+
+      // 转换为LocalUser格式
+      const localUser: LocalUser = {
+        id: userRecord.id,
+        username: userRecord.username,
+        phone: userRecord.phone,
+        email: userRecord.email,
+        role: userRecord.role as UserRole,
+        created_at: userRecord.createdAt
+      };
+
+      // 设置为当前用户
+      this.setCurrentUser(localUser);
+
+      return localUser;
+    } catch (error) {
+      console.error('用户登录失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 登录（简化版，直接使用默认用户）- 保持向后兼容
    */
   async login(phone?: string, email?: string): Promise<LocalUser> {
     let user: LocalUser;
+
+    // 如果没有提供任何信息，直接创建/使用默认用户
+    if (!phone && !email) {
+      return await this.createDefaultUser();
+    }
 
     // 尝试查找现有用户
     const profiles = await IndexedDBHelper.getAll<Profile>(STORES.PROFILES);
@@ -219,6 +353,8 @@ export function useLocalAuth() {
     isAuthenticated: localAuth.isAuthenticated(),
     isAdmin: localAuth.isAdmin(),
     login: (phone?: string, email?: string) => localAuth.login(phone, email),
+    loginWithPassword: (userData: LoginUserData) => localAuth.loginWithPassword(userData),
+    register: (userData: RegisterUserData) => localAuth.register(userData),
     logout: () => localAuth.logout(),
     updateProfile: (updates: Partial<Profile>) => localAuth.updateProfile(updates)
   };

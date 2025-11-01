@@ -115,7 +115,6 @@ export default function QuickInput({
 
           // 创建URL类型的条目
           const newItem = await itemApi.createItem({
-            user_id: user.id,
             raw_text: inputText,
             type: 'url',
             title: urlResult.title,
@@ -129,7 +128,7 @@ export default function QuickInput({
             url: urlResult.url,
             url_title: urlResult.title,
             url_summary: urlResult.summary,
-            url_thumbnail: urlResult.thumbnail,
+            url_thumbnail: urlResult.thumbnail || null,
             url_fetched_at: new Date().toISOString(),
             has_conflict: false,
             start_time: null,
@@ -157,11 +156,13 @@ export default function QuickInput({
         // 普通文本,使用AI处理
         const aiResult = await processTextWithAI(inputText);
 
+        // 确保类型不为空，默认使用 'task'
+        const itemType = aiResult.type || 'task';
+
         // 创建条目
         const newItem = await itemApi.createItem({
-          user_id: user.id,
           raw_text: inputText,
-          type: aiResult.type,
+          type: itemType,
           title: aiResult.title,
           description: aiResult.description,
           due_date: aiResult.due_date,
@@ -185,10 +186,13 @@ export default function QuickInput({
         });
 
         if (newItem) {
+          console.log('✅ 普通文本条目创建成功:', newItem);
           toast.success('已添加到智能仪表盘');
           onProcessingComplete?.(processingId);
           onItemCreated?.();
+          console.log('🔄 已调用数据刷新回调');
         } else {
+          console.error('❌ 创建条目返回 null');
           toast.error('创建失败,请重试');
           onProcessingError?.(processingId);
         }

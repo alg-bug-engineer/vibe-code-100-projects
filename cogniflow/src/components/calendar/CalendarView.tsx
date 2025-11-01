@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 
-import { itemApi } from '@/db/localApi';
+import { itemApi } from '@/db/api';
 import type { Item } from '@/types/types';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, eachDayOfInterval, isSameDay, isToday, isSameMonth } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -119,12 +119,18 @@ export default function CalendarView({ onUpdate }: CalendarViewProps) {
                     <div
                       key={`${item.id}-${index}`}
                       className={`
-                        text-xs px-1 py-0.5 rounded truncate
+                        text-xs px-1 py-0.5 rounded
                         ${item.type === 'event' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'}
                       `}
                       title={item.title || undefined}
                     >
-                      {item.title}
+                      <div className="truncate font-medium">{item.title}</div>
+                      {item.type === 'event' && item.start_time && (
+                        <div className="text-[10px] opacity-75">
+                          {format(new Date(item.start_time), 'HH:mm')}
+                          {item.end_time && ` - ${format(new Date(item.end_time), 'HH:mm')}`}
+                        </div>
+                      )}
                     </div>
                   ))}
                   {items.length > 3 && (

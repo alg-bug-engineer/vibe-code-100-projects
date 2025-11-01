@@ -16,7 +16,7 @@ import {
   Lightbulb,
   Loader2
 } from 'lucide-react';
-import { itemApi } from '@/db/localApi';
+import { itemApi } from '@/db/api';
 import type { Item, TagStats } from '@/types/types';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
