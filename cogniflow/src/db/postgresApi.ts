@@ -319,6 +319,31 @@ export class PostgresItemApi {
       return [];
     }
   }
+
+  /**
+   * 根据标签获取条目
+   */
+  async getItemsByTag(tag: string): Promise<Item[]> {
+    try {
+      return await this.getItems({ tag, archived: false });
+    } catch (error) {
+      console.error('❌ 根据标签获取条目失败:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 搜索条目
+   */
+  async searchItems(keywords: string): Promise<Item[]> {
+    try {
+      const data = await fetchAPI(`/items/search?q=${encodeURIComponent(keywords)}`);
+      return data;
+    } catch (error) {
+      console.error('❌ 搜索条目失败:', error);
+      return [];
+    }
+  }
 }
 
 /**

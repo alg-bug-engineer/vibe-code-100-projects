@@ -29,6 +29,7 @@ interface ReportData {
   events: number;
   notes: number;
   urls: number;
+  collections: number;
   tags: TagStats[];
   items: Item[];
 }
@@ -78,7 +79,11 @@ export default function ReportView() {
       // 将标签统计对象转换为数组
       const tagsArray = Array.isArray(tags) 
         ? tags 
-        : Object.entries(tags).map(([name, count]) => ({ name, count }))
+        : Object.entries(tags).map(([name, count]) => ({ 
+            tag: name, 
+            count: typeof count === 'number' ? count : 0,
+            lastUsed: new Date().toISOString()
+          }))
             .sort((a, b) => b.count - a.count)
             .slice(0, 10);
 
@@ -89,6 +94,7 @@ export default function ReportView() {
         events: items.filter((item: Item) => item.type === 'event').length,
         notes: items.filter((item: Item) => item.type === 'note').length,
         urls: items.filter((item: Item) => item.type === 'url').length,
+        collections: items.filter((item: Item) => item.type === 'collection').length,
         tags: tagsArray,
         items
       };
@@ -218,7 +224,7 @@ export default function ReportView() {
                   <CardContent>
                     <div className="text-2xl font-bold">{reportData.totalItems}</div>
                     <p className="text-xs text-muted-foreground">
-                      包含任务、事件、笔记和链接
+                      任务、事件、集合、笔记和链接
                     </p>
                   </CardContent>
                 </Card>
@@ -282,6 +288,10 @@ export default function ReportView() {
                       <div className="flex items-center justify-between">
                         <span className="text-sm">事件</span>
                         <Badge variant="secondary">{reportData.events}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">集合 (日报/会议等)</span>
+                        <Badge variant="secondary">{reportData.collections}</Badge>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm">笔记</span>

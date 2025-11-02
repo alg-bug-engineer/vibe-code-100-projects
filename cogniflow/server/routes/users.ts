@@ -49,6 +49,75 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
 
     const user = result.rows[0];
 
+    // 为新用户创建默认模板
+    try {
+      const defaultTemplates = [
+        {
+          trigger_word: '日报',
+          template_name: '每日工作日志',
+          icon: '📰',
+          collection_type: '日报',
+          default_tags: ['工作', '日报'],
+          default_sub_items: [
+            { id: '1', text: '总结今日完成的工作', status: 'pending' },
+            { id: '2', text: '记录遇到的问题', status: 'pending' },
+            { id: '3', text: '规划明日工作计划', status: 'pending' },
+          ],
+          sort_order: 0,
+        },
+        {
+          trigger_word: '会议',
+          template_name: '会议纪要',
+          icon: '👥',
+          collection_type: '会议',
+          default_tags: ['会议', '工作'],
+          default_sub_items: [
+            { id: '1', text: '记录会议议题', status: 'pending' },
+            { id: '2', text: '记录讨论要点', status: 'pending' },
+            { id: '3', text: '记录行动项', status: 'pending' },
+          ],
+          sort_order: 1,
+        },
+        {
+          trigger_word: '月报',
+          template_name: '月度总结',
+          icon: '📅',
+          collection_type: '月报',
+          default_tags: ['工作', '月报'],
+          default_sub_items: [
+            { id: '1', text: '本月工作完成情况', status: 'pending' },
+            { id: '2', text: '重点成果与亮点', status: 'pending' },
+            { id: '3', text: '下月工作计划', status: 'pending' },
+          ],
+          sort_order: 2,
+        },
+      ];
+
+      for (const template of defaultTemplates) {
+        await query(
+          `INSERT INTO user_templates (
+            user_id, trigger_word, template_name, icon, collection_type,
+            default_tags, default_sub_items, is_active, sort_order
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [
+            user.id,
+            template.trigger_word,
+            template.template_name,
+            template.icon,
+            template.collection_type,
+            template.default_tags,
+            JSON.stringify(template.default_sub_items),
+            true,
+            template.sort_order,
+          ]
+        );
+      }
+      console.log(`✅ 为新用户 ${user.username} 创建了默认模板`);
+    } catch (templateError) {
+      console.error('创建默认模板失败:', templateError);
+      // 不中断注册流程，只记录错误
+    }
+
     // 生成 JWT token
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role },

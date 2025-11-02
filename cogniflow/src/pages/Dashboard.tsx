@@ -8,6 +8,7 @@ import QuickInput from '@/components/items/QuickInput';
 import ItemCard from '@/components/items/ItemCard';
 import TodoCard from '@/components/items/TodoCard';
 import ProcessingCard from '@/components/items/ProcessingCard';
+import { CollectionCard } from '@/components/items/CollectionCard';
 import TagCard from '@/components/tags/TagCard';
 import { URLCard } from '@/components/url/URLCard';
 import CalendarView from '@/components/calendar/CalendarView';
@@ -80,9 +81,8 @@ export default function Dashboard() {
     const searchItems = async () => {
       if (searchQuery.trim()) {
         setIsSearching(true);
-        // 将搜索关键词转换为数组
-        const keywords = searchQuery.trim().split(/\s+/);
-        const results = await itemApi.searchItems(keywords);
+        // 直接使用搜索查询字符串
+        const results = await itemApi.searchItems(searchQuery.trim());
         setSearchResults(results);
       } else {
         setIsSearching(false);
@@ -157,7 +157,20 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-3">
                 {searchResults.map((item) => (
-                  item.type === 'url' ? (
+                  item.type === 'collection' ? (
+                    <CollectionCard 
+                      key={item.id} 
+                      item={item} 
+                      onUpdate={async (id, updates) => {
+                        await itemApi.updateItem(id, updates);
+                        await loadData();
+                      }}
+                      onDelete={async (id) => {
+                        await itemApi.deleteItem(id);
+                        await loadData();
+                      }}
+                    />
+                  ) : item.type === 'url' ? (
                     <URLCard key={item.id} item={item} onDelete={handleDeleteURL} />
                   ) : (
                     <ItemCard key={item.id} item={item} onUpdate={loadData} />
@@ -210,7 +223,22 @@ export default function Dashboard() {
                 </div>
               ) : (
                 upcomingItems.map((item) => (
-                  <ItemCard key={item.id} item={item} onUpdate={loadData} />
+                  item.type === 'collection' ? (
+                    <CollectionCard 
+                      key={item.id} 
+                      item={item} 
+                      onUpdate={async (id, updates) => {
+                        await itemApi.updateItem(id, updates);
+                        await loadData();
+                      }}
+                      onDelete={async (id) => {
+                        await itemApi.deleteItem(id);
+                        await loadData();
+                      }}
+                    />
+                  ) : (
+                    <ItemCard key={item.id} item={item} onUpdate={loadData} />
+                  )
                 ))
               )}
             </TabsContent>
@@ -337,7 +365,20 @@ export default function Dashboard() {
                   </div>
                   <div className="space-y-3">
                     {archivedItems.map((item) => (
-                      item.type === 'url' ? (
+                      item.type === 'collection' ? (
+                        <CollectionCard 
+                          key={item.id} 
+                          item={item} 
+                          onUpdate={async (id, updates) => {
+                            await itemApi.updateItem(id, updates);
+                            await loadData();
+                          }}
+                          onDelete={async (id) => {
+                            await itemApi.deleteItem(id);
+                            await loadData();
+                          }}
+                        />
+                      ) : item.type === 'url' ? (
                         <URLCard key={item.id} item={item} onDelete={handleDeleteURL} />
                       ) : (
                         <ItemCard key={item.id} item={item} onUpdate={loadData} />
@@ -369,7 +410,20 @@ export default function Dashboard() {
                     </p>
                   ) : (
                     tagItems.map((item) => (
-                      item.type === 'url' ? (
+                      item.type === 'collection' ? (
+                        <CollectionCard 
+                          key={item.id} 
+                          item={item} 
+                          onUpdate={async (id, updates) => {
+                            await itemApi.updateItem(id, updates);
+                            await loadData();
+                          }}
+                          onDelete={async (id) => {
+                            await itemApi.deleteItem(id);
+                            await loadData();
+                          }}
+                        />
+                      ) : item.type === 'url' ? (
                         <URLCard key={item.id} item={item} onDelete={handleDeleteURL} />
                       ) : (
                         <ItemCard key={item.id} item={item} onUpdate={loadData} />
