@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间冲突检测测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #e74c3c;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-case {
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 15px 0;
+            background: #f8f9fa;
+        }
+        .test-case.conflict {
+            border-left-color: #e74c3c;
+            background: #fff5f5;
+        }
+        .test-input {
+            background: #e8f4f8;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .expected {
+            color: #27ae60;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0fff4;
+            border-radius: 4px;
+        }
+        .timeline {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+        }
+        .timeline-bar {
+            flex: 1;
+            height: 30px;
+            position: relative;
+            background: #ecf0f1;
+            border-radius: 4px;
+            margin: 0 10px;
+        }
+        .timeline-event {
+            position: absolute;
+            height: 100%;
+            background: #3498db;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+        }
+        .timeline-event.conflict {
+            background: #e74c3c;
+        }
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .visual-demo {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            margin: 20px 0;
+        }
+        .demo-card {
+            border-left: 4px solid #e74c3c;
+            background: rgba(231, 76, 60, 0.05);
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.15);
+        }
+        .conflict-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            background: #ffe5e5;
+            border: 1px solid #ffcccc;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #c92a2a;
+            font-weight: 600;
+        }
+        .warning-icon {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 时间冲突检测功能测试指南</h1>
+
+    <div class="instructions">
+        <h3>📋 测试说明</h3>
+        <p>本页面列出了所有需要测试的场景。请在应用中依次输入测试语句，验证冲突检测是否正确工作。</p>
+        <p><strong>启动步骤：</strong></p>
+        <ol>
+            <li>确保 PostgreSQL 数据库正在运行: <code>npm run db:start</code></li>
+            <li>启动后端服务器: <code>npm run server</code></li>
+            <li>启动前端开发服务器: <code>npm run dev</code></li>
+        </ol>
+    </div>
+
+    <div class="visual-demo">
+        <h3>🎨 视觉效果预览</h3>
+        <p>冲突的事项会显示如下效果：</p>
+        <div class="demo-card">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <h4 style="margin: 0;">今天下午两点开会</h4>
+                <span class="conflict-badge">
+                    <span class="warning-icon">⚠</span>
+                    时间冲突
+                </span>
+            </div>
+            <p style="margin: 10px 0 0 0; color: #666;">14:00 → 15:00 (60分钟)</p>
+        </div>
+        <ul>
+            <li>✅ 红色左边框</li>
+            <li>✅ 淡红色背景</li>
+            <li>✅ "时间冲突"标签</li>
+            <li>✅ 警告图标</li>
+            <li>✅ 鼠标悬停显示详细提示</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>测试用例</h2>
+
+        <div class="test-case conflict">
+            <h3>测试 1: 完全重叠 ✨</h3>
+            <div class="test-input">
+                输入 1: 今天下午2点开会<br>
+                输入 2: 今天下午2点半有接待
+            </div>
+            <div class="timeline">
+                <span>14:00</span>
+                <div class="timeline-bar">
+                    <div class="timeline-event conflict" style="left: 0%; width: 66.67%;">开会 (14:00-15:00)</div>
+                    <div class="timeline-event conflict" style="left: 33.33%; width: 66.67%;">接待 (14:30-15:30)</div>
+                </div>
+                <span>15:30</span>
+            </div>
+            <div class="expected">
+                ✅ 预期：两个事项都显示冲突标识<br>
+                📊 重叠时间段：14:30-15:00 (30分钟)
+            </div>
+        </div>
+
+        <div class="test-case conflict">
+            <h3>测试 2: 部分重叠（开始时间）</h3>
+            <div class="test-input">
+                输入 1: 今天下午3点开会，2小时<br>
+                输入 2: 今天下午4点培训
+            </div>
+            <div class="timeline">
+                <span>15:00</span>
+                <div class="timeline-bar">
+                    <div class="timeline-event conflict" style="left: 0%; width: 66.67%;">开会 (15:00-17:00)</div>
+                    <div class="timeline-event conflict" style="left: 33.33%; width: 33.33%;">培训 (16:00-17:00)</div>
+                </div>
+                <span>17:00</span>
+            </div>
+            <div class="expected">
+                ✅ 预期：两个事项都显示冲突标识<br>
+                📊 重叠时间段：16:00-17:00 (1小时)
+            </div>
+        </div>
+
+        <div class="test-case conflict">
+            <h3>测试 3: 完全包含</h3>
+            <div class="test-input">
+                输入 1: 周三下午2点到5点研讨会<br>
+                输入 2: 周三下午3点演示，30分钟
+            </div>
+            <div class="timeline">
+                <span>14:00</span>
+                <div class="timeline-bar">
+                    <div class="timeline-event conflict" style="left: 0%; width: 100%;">研讨会 (14:00-17:00)</div>
+                    <div class="timeline-event conflict" style="left: 33.33%; width: 16.67%; background: #f39c12;">演示</div>
+                </div>
+                <span>17:00</span>
+            </div>
+            <div class="expected">
+                ✅ 预期：两个事项都显示冲突标识<br>
+                📊 演示完全包含在研讨会时间内
+            </div>
+        </div>
+
+        <div class="test-case">
+            <h3>测试 4: 连续事项（不冲突）✅</h3>
+            <div class="test-input">
+                输入 1: 今天上午9点会议，1小时<br>
+                输入 2: 今天上午10点培训
+            </div>
+            <div class="timeline">
+                <span>09:00</span>
+                <div class="timeline-bar">
+                    <div class="timeline-event" style="left: 0%; width: 50%;">会议 (09:00-10:00)</div>
+                    <div class="timeline-event" style="left: 50%; width: 50%;">培训 (10:00-11:00)</div>
+                </div>
+                <span>11:00</span>
+            </div>
+            <div class="expected">
+                ✅ 预期：两个事项都<strong>不显示</strong>冲突标识<br>
+                📊 无重叠，第一个结束时第二个开始
+            </div>
+        </div>
+
+        <div class="test-case conflict">
+            <h3>测试 5: 同时开始</h3>
+            <div class="test-input">
+                输入 1: 下周一早上9点团队会议<br>
+                输入 2: 下周一早上9点项目启动会
+            </div>
+            <div class="timeline">
+                <span>09:00</span>
+                <div class="timeline-bar">
+                    <div class="timeline-event conflict" style="left: 0%; width: 100%; opacity: 0.5;">团队会议</div>
+                    <div class="timeline-event conflict" style="left: 0%; width: 100%; opacity: 0.5; background: #c0392b;">项目启动会</div>
+                </div>
+                <span>10:00</span>
+            </div>
+            <div class="expected">
+                ✅ 预期：两个事项都显示冲突标识<br>
+                📊 完全重叠（同时开始同时结束）
+            </div>
+        </div>
+
+        <div class="test-case conflict">
+            <h3>测试 6: 多个事项冲突</h3>
+            <div class="test-input">
+                输入 1: 后天下午2点开会<br>
+                输入 2: 后天下午2点半接待<br>
+                输入 3: 后天下午2点45分电话会议
+            </div>
+            <div class="timeline">
+                <span>14:00</span>
+                <div class="timeline-bar">
+                    <div class="timeline-event conflict" style="left: 0%; width: 60%;">开会</div>
+                    <div class="timeline-event conflict" style="left: 30%; width: 60%; opacity: 0.7;">接待</div>
+                    <div class="timeline-event conflict" style="left: 45%; width: 45%; opacity: 0.5; background: #c0392b;">电话会议</div>
+                </div>
+                <span>15:30</span>
+            </div>
+            <div class="expected">
+                ✅ 预期：三个事项都显示冲突标识<br>
+                📊 形成冲突链，所有事项互相重叠
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>交互测试</h2>
+
+        <div class="test-case">
+            <h3>测试 7: 编辑解决冲突</h3>
+            <ol>
+                <li>创建两个冲突的事项</li>
+                <li>点击编辑其中一个事项</li>
+                <li>修改时间使其不再冲突</li>
+                <li>保存</li>
+            </ol>
+            <div class="expected">
+                ✅ 预期：修改前都有冲突标识，修改后冲突标识消失
+            </div>
+        </div>
+
+        <div class="test-case">
+            <h3>测试 8: 删除冲突事项</h3>
+            <ol>
+                <li>创建两个冲突的事项</li>
+                <li>删除其中一个事项</li>
+            </ol>
+            <div class="expected">
+                ✅ 预期：删除后剩余事项的冲突标识应该消失
+            </div>
+        </div>
+
+        <div class="test-case">
+            <h3>测试 9: 归档/恢复</h3>
+            <ol>
+                <li>创建两个冲突的事项</li>
+                <li>归档其中一个</li>
+                <li>验证另一个的冲突标识消失</li>
+                <li>恢复归档的事项</li>
+                <li>验证冲突标识重新出现</li>
+            </ol>
+            <div class="expected">
+                ✅ 预期：归档后冲突消失，恢复后冲突重现
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ 验证清单</h2>
+        <p>完成所有测试后，确认以下内容：</p>
+        <ul>
+            <li>☐ 冲突事项有红色左边框</li>
+            <li>☐ 冲突事项有淡红色背景</li>
+            <li>☐ 显示"时间冲突"标签</li>
+            <li>☐ 有警告三角形图标</li>
+            <li>☐ 鼠标悬停显示详细提示</li>
+            <li>☐ 所有重叠场景都能正确检测</li>
+            <li>☐ 连续事项不会误判为冲突</li>
+            <li>☐ 编辑后实时更新冲突状态</li>
+            <li>☐ 删除后实时更新冲突状态</li>
+            <li>☐ 归档/恢复后实时更新冲突状态</li>
+            <li>☐ 只有 event 类型才检测冲突</li>
+            <li>☐ 只检测同一用户的事项</li>
+        </ul>
+    </div>
+
+    <div class="test-section" style="background: #e8f5e9;">
+        <h2>🎉 功能特点</h2>
+        <ul>
+            <li><strong>自动检测：</strong>创建、编辑事项时自动检测冲突</li>
+            <li><strong>实时更新：</strong>删除、归档操作后立即更新相关事项的冲突状态</li>
+            <li><strong>醒目标识：</strong>多重视觉提示，不会错过冲突</li>
+            <li><strong>智能判断：</strong>准确识别各种时间重叠情况</li>
+            <li><strong>友好提示：</strong>清晰的提示信息帮助用户理解冲突</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('%c🔍 时间冲突检测测试页面', 'color: #e74c3c; font-size: 20px; font-weight: bold;');
+        console.log('%c开始测试吧！', 'color: #27ae60; font-size: 16px;');
+    </script>
+</body>
+</html>

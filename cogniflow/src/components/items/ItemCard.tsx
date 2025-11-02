@@ -129,9 +129,11 @@ export default function ItemCard({ item, onUpdate }: ItemCardProps) {
     }
   };
 
-  // 确定边框颜色: 冲突优先级最高
+  // 确定边框颜色: 冲突优先级最高，然后是过期，最后是优先级
   const borderClass = hasConflict 
-    ? 'border-l-4 border-l-red-500' 
+    ? 'border-l-4 border-l-red-500 bg-red-50/50 dark:bg-red-950/20' 
+    : isOverdue
+    ? 'border-l-4 border-l-orange-500'
     : (priorityColors[item.priority as keyof typeof priorityColors] || '');
 
   return (
@@ -143,7 +145,7 @@ export default function ItemCard({ item, onUpdate }: ItemCardProps) {
         hover:shadow-lg hover:scale-[1.01] 
         transition-all duration-200 ease-out
         border border-gray-200 dark:border-gray-800
-        bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm
+        ${hasConflict ? 'shadow-md shadow-red-200/50 dark:shadow-red-900/30' : 'bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm'}
       `}>
         {/* 悬浮操作按钮 */}
         <div className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-all duration-200 flex gap-1 z-10">
@@ -205,10 +207,14 @@ export default function ItemCard({ item, onUpdate }: ItemCardProps) {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700">
+                          <AlertTriangle className="h-3.5 w-3.5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                          <span className="text-xs font-medium text-red-700 dark:text-red-300">时间冲突</span>
+                        </div>
                       </TooltipTrigger>
-                      <TooltipContent>
-                        <p>⚠️ 此日程存在时间冲突</p>
+                      <TooltipContent className="bg-red-50 dark:bg-red-900 border-red-200 dark:border-red-700">
+                        <p className="text-red-900 dark:text-red-100 font-medium">⚠️ 此日程与其他事项存在时间冲突</p>
+                        <p className="text-xs text-red-700 dark:text-red-300 mt-1">请检查并调整时间安排</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

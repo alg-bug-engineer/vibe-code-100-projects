@@ -10,6 +10,125 @@ import { AuthRequest } from '../middleware/auth.js';
 const router = Router();
 
 /**
+ * 检测时间冲突的辅助函数
+ * 检查给定的时间范围是否与用户的其他事项冲突
+ */
+async function detectTimeConflicts(
+  userId: string,
+  startTime: string | null,
+  endTime: string | null,
+  excludeItemId?: string
+): Promise<boolean> {
+  // 如果没有时间信息，不存在冲突
+  if (!startTime || !endTime) {
+    return false;
+  }
+
+  try {
+    // 查询与给定时间范围重叠的事项
+    let sql = `
+      SELECT id, title, start_time, end_time
+      FROM items
+      WHERE user_id = $1
+        AND deleted_at IS NULL
+        AND type = 'event'
+        AND start_time IS NOT NULL
+        AND end_time IS NOT NULL
+        AND (
+          -- 检测各种时间重叠情况
+          (start_time >= $2::timestamptz AND start_time < $3::timestamptz) OR
+          (end_time > $2::timestamptz AND end_time <= $3::timestamptz) OR
+          (start_time <= $2::timestamptz AND end_time >= $3::timestamptz) OR
+          ($2::timestamptz <= start_time AND $3::timestamptz >= end_time)
+        )
+    `;
+    
+    const params: any[] = [userId, startTime, endTime];
+    
+    // 如果是更新操作，排除当前项
+    if (excludeItemId) {
+      sql += ` AND id != $4`;
+      params.push(excludeItemId);
+    }
+
+    const result = await query(sql, params);
+    return result.rows.length > 0;
+  } catch (error) {
+    console.error('检测时间冲突失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 更新所有相关事项的冲突状态
+ * 当事项被创建、更新或删除时调用
+ */
+async function updateConflictStatus(userId: string): Promise<void> {
+  try {
+    // 首先重置所有事项的冲突状态
+    await query(
+      `UPDATE items SET has_conflict = false 
+       WHERE user_id = $1 AND type = 'event' AND deleted_at IS NULL`,
+      [userId]
+    );
+
+    // 查询所有有时间信息的事项
+    const result = await query(
+      `SELECT id, start_time, end_time
+       FROM items
+       WHERE user_id = $1
+         AND type = 'event'
+         AND deleted_at IS NULL
+         AND start_time IS NOT NULL
+         AND end_time IS NOT NULL
+       ORDER BY start_time`,
+      [userId]
+    );
+
+    const events = result.rows;
+    const conflictIds = new Set<string>();
+
+    // 检测每对事项之间的冲突
+    for (let i = 0; i < events.length; i++) {
+      for (let j = i + 1; j < events.length; j++) {
+        const event1 = events[i];
+        const event2 = events[j];
+
+        const start1 = new Date(event1.start_time).getTime();
+        const end1 = new Date(event1.end_time).getTime();
+        const start2 = new Date(event2.start_time).getTime();
+        const end2 = new Date(event2.end_time).getTime();
+
+        // 检测冲突
+        const hasConflict = (
+          (start1 >= start2 && start1 < end2) ||
+          (end1 > start2 && end1 <= end2) ||
+          (start1 <= start2 && end1 >= end2) ||
+          (start2 <= start1 && end2 >= end1)
+        );
+
+        if (hasConflict) {
+          conflictIds.add(event1.id);
+          conflictIds.add(event2.id);
+        }
+      }
+    }
+
+    // 更新有冲突的事项
+    if (conflictIds.size > 0) {
+      const ids = Array.from(conflictIds);
+      await query(
+        `UPDATE items SET has_conflict = true 
+         WHERE id = ANY($1::uuid[])`,
+        [ids]
+      );
+    }
+  } catch (error) {
+    console.error('更新冲突状态失败:', error);
+  }
+}
+
+/**
  * 获取条目列表
  * GET /api/items?type=task&status=pending&archived=false
  */
@@ -115,6 +234,11 @@ router.post('/', async (req: AuthRequest, res, next) => {
     ];
 
     const result = await query(sql, params);
+    
+    // 如果是事项类型且有时间信息，更新冲突状态
+    if (type === 'event' && start_time && end_time) {
+      await updateConflictStatus(userId);
+    }
     
     // 记录活动日志
     await query(
@@ -349,6 +473,19 @@ router.put('/:id', async (req: AuthRequest, res, next) => {
       return res.status(404).json({ error: '条目不存在' });
     }
 
+    // 如果更新了时间信息或者是事项类型，重新检测冲突
+    if (result.rows[0].type === 'event' && (req.body.start_time !== undefined || req.body.end_time !== undefined)) {
+      await updateConflictStatus(userId);
+      // 重新获取更新后的数据（包含最新的冲突状态）
+      const updatedResult = await query(
+        'SELECT * FROM items WHERE id = $1',
+        [id]
+      );
+      if (updatedResult.rows.length > 0) {
+        result.rows[0] = updatedResult.rows[0];
+      }
+    }
+
     // 记录活动日志
     await query(
       'INSERT INTO activity_logs (user_id, action, entity_type, entity_id, details) VALUES ($1, $2, $3, $4, $5)',
@@ -381,6 +518,11 @@ router.delete('/:id', async (req: AuthRequest, res, next) => {
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: '条目不存在' });
+    }
+
+    // 如果删除的是事项类型，更新冲突状态
+    if (result.rows[0].type === 'event') {
+      await updateConflictStatus(userId);
     }
 
     // 记录活动日志
@@ -417,6 +559,11 @@ router.post('/:id/archive', async (req: AuthRequest, res, next) => {
       return res.status(404).json({ error: '条目不存在' });
     }
 
+    // 如果归档的是事项类型，更新冲突状态
+    if (result.rows[0].type === 'event') {
+      await updateConflictStatus(userId);
+    }
+
     res.json({ success: true });
   } catch (error) {
     next(error);
@@ -443,6 +590,11 @@ router.post('/:id/unarchive', async (req: AuthRequest, res, next) => {
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: '条目不存在' });
+    }
+
+    // 如果恢复归档的是事项类型，更新冲突状态
+    if (result.rows[0].type === 'event') {
+      await updateConflictStatus(userId);
     }
 
     res.json({ success: true });
