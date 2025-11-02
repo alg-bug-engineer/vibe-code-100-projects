@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useLocalAuth, type LoginUserData } from '@/db/localAuth';
+import { useAuth } from '@/db/apiAdapter';
+import type { LoginUserData } from '@/db/localAuth';
 import { RegisterPanel } from './RegisterPanel';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
@@ -44,7 +45,7 @@ export function LocalLoginPanel({
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
 
-  const { login, loginWithPassword, isAuthenticated } = useLocalAuth();
+  const { login, loginWithPassword, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // 如果已经登录，直接跳转到首页

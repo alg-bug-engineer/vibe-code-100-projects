@@ -16,13 +16,35 @@ interface EditItemDialogProps {
   onUpdate?: () => void;
 }
 
+/**
+ * 将ISO时间字符串转换为本地时间字符串（用于datetime-local输入）
+ */
+const formatDateTimeLocal = (dateTimeString: string): string => {
+  const date = new Date(dateTimeString);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+/**
+ * 将datetime-local输入值转换为ISO字符串（不带时区偏移）
+ */
+const formatToISOWithoutTimezone = (dateTimeLocal: string): string => {
+  // datetime-local格式: "2025-11-02T18:00"
+  // 直接添加秒数，不进行时区转换
+  return dateTimeLocal + ':00';
+};
+
 export default function EditItemDialog({ item, open, onOpenChange, onUpdate }: EditItemDialogProps) {
   const [formData, setFormData] = useState({
     title: item.title || '',
     description: item.description || '',
     type: item.type,
     priority: item.priority,
-    due_date: item.due_date ? new Date(item.due_date).toISOString().slice(0, 16) : '',
+    due_date: item.due_date ? formatDateTimeLocal(item.due_date) : '',
     tags: item.tags.join(', ')
   });
 
@@ -32,7 +54,7 @@ export default function EditItemDialog({ item, open, onOpenChange, onUpdate }: E
       description: item.description || '',
       type: item.type,
       priority: item.priority,
-      due_date: item.due_date ? new Date(item.due_date).toISOString().slice(0, 16) : '',
+      due_date: item.due_date ? formatDateTimeLocal(item.due_date) : '',
       tags: item.tags.join(', ')
     });
   }, [item]);
@@ -45,7 +67,7 @@ export default function EditItemDialog({ item, open, onOpenChange, onUpdate }: E
       description: formData.description,
       type: formData.type,
       priority: formData.priority,
-      due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
+      due_date: formData.due_date ? formatToISOWithoutTimezone(formData.due_date) : null,
       tags: formData.tags.split(',').map(t => t.trim()).filter(t => t)
     };
 

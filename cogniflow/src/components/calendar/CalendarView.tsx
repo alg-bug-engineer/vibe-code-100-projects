@@ -10,6 +10,30 @@ import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, ea
 import { zhCN } from 'date-fns/locale';
 import ItemCard from '@/components/items/ItemCard';
 
+/**
+ * 将不带时区的ISO时间字符串解析为本地时间
+ * 避免时区转换问题
+ */
+const parseLocalDateTime = (dateTimeString: string): Date => {
+  if (!dateTimeString.includes('Z') && !dateTimeString.includes('+') && !dateTimeString.includes('T')) {
+    return new Date(dateTimeString + 'T00:00:00');
+  }
+  
+  if (!dateTimeString.includes('Z') && !dateTimeString.match(/[+-]\d{2}:\d{2}$/)) {
+    const parts = dateTimeString.split(/[-T:]/);
+    return new Date(
+      parseInt(parts[0]),
+      parseInt(parts[1]) - 1,
+      parseInt(parts[2]),
+      parseInt(parts[3] || '0'),
+      parseInt(parts[4] || '0'),
+      parseInt(parts[5] || '0')
+    );
+  }
+  
+  return new Date(dateTimeString);
+};
+
 interface CalendarViewProps {
   onUpdate?: () => void;
 }
@@ -127,8 +151,8 @@ export default function CalendarView({ onUpdate }: CalendarViewProps) {
                       <div className="truncate font-medium">{item.title}</div>
                       {item.type === 'event' && item.start_time && (
                         <div className="text-[10px] opacity-75">
-                          {format(new Date(item.start_time), 'HH:mm')}
-                          {item.end_time && ` - ${format(new Date(item.end_time), 'HH:mm')}`}
+                          {format(parseLocalDateTime(item.start_time), 'HH:mm')}
+                          {item.end_time && ` - ${format(parseLocalDateTime(item.end_time), 'HH:mm')}`}
                         </div>
                       )}
                     </div>

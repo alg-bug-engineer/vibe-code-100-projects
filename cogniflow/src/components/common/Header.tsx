@@ -12,11 +12,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Download, Upload, User, LogOut } from "lucide-react";
-import { useLocalAuth, exportData, importData } from "@/db/api";
+import { useAuth, exportData, importData } from "@/db/api";
 import { toast } from "sonner";
 
 export default function Header() {
-  const { user, isAdmin, logout } = useLocalAuth();
+  const { user, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {

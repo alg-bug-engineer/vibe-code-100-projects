@@ -75,6 +75,13 @@ export default function ReportView() {
         itemApi.getTagStats()
       ]);
 
+      // 将标签统计对象转换为数组
+      const tagsArray = Array.isArray(tags) 
+        ? tags 
+        : Object.entries(tags).map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10);
+
       const data: ReportData = {
         totalItems: items.length,
         completedTasks: items.filter((item: Item) => item.type === 'task' && item.status === 'completed').length,
@@ -82,7 +89,7 @@ export default function ReportView() {
         events: items.filter((item: Item) => item.type === 'event').length,
         notes: items.filter((item: Item) => item.type === 'note').length,
         urls: items.filter((item: Item) => item.type === 'url').length,
-        tags: tags.slice(0, 10), // 取前10个标签
+        tags: tagsArray,
         items
       };
 

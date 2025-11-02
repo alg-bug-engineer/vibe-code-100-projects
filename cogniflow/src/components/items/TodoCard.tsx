@@ -22,6 +22,29 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 import EditItemDialog from './EditItemDialog';
 
+/**
+ * 将不带时区的ISO时间字符串解析为本地时间
+ */
+const parseLocalDateTime = (dateTimeString: string): Date => {
+  if (!dateTimeString.includes('Z') && !dateTimeString.includes('+') && !dateTimeString.includes('T')) {
+    return new Date(dateTimeString + 'T00:00:00');
+  }
+  
+  if (!dateTimeString.includes('Z') && !dateTimeString.match(/[+-]\d{2}:\d{2}$/)) {
+    const parts = dateTimeString.split(/[-T:]/);
+    return new Date(
+      parseInt(parts[0]),
+      parseInt(parts[1]) - 1,
+      parseInt(parts[2]),
+      parseInt(parts[3] || '0'),
+      parseInt(parts[4] || '0'),
+      parseInt(parts[5] || '0')
+    );
+  }
+  
+  return new Date(dateTimeString);
+};
+
 interface TodoCardProps {
   item: Item;
   onUpdate: () => void;
@@ -68,7 +91,7 @@ export default function TodoCard({ item, onUpdate }: TodoCardProps) {
   
   // 过期判断：只有截止日期在今天之前（不包括今天）才算过期
   const isOverdue = item.due_date && (() => {
-    const dueDate = new Date(item.due_date);
+    const dueDate = parseLocalDateTime(item.due_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0); // 设置为当天00:00:00
     dueDate.setHours(0, 0, 0, 0); // 设置为截止日期00:00:00
@@ -194,9 +217,9 @@ export default function TodoCard({ item, onUpdate }: TodoCardProps) {
                   `}>
                     <Calendar className="h-3 w-3" />
                     <span className="font-medium">
-                      {isToday(new Date(item.due_date))
+                      {isToday(parseLocalDateTime(item.due_date))
                         ? '今天'
-                        : format(new Date(item.due_date), 'MM月dd日', { locale: zhCN })}
+                        : format(parseLocalDateTime(item.due_date), 'MM月dd日', { locale: zhCN })}
                     </span>
                   </div>
                 )}

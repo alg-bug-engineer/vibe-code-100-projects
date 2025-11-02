@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CogniFlow 数据迁移工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .info-box {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            display: block;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            display: block;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            display: block;
+        }
+        
+        .progress {
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 数据迁移工具</h1>
+        <p class="subtitle">将 LocalStorage 数据迁移到 PostgreSQL 数据库</p>
+        
+        <div class="info-box">
+            💡 <strong>使用说明：</strong><br>
+            1. 确保 API 服务器正在运行 (localhost:3001)<br>
+            2. 输入你的用户名和密码<br>
+            3. 点击"开始迁移"按钮<br>
+            4. 等待迁移完成
+        </div>
+        
+        <div class="section">
+            <label for="apiUrl">API 地址</label>
+            <input type="text" id="apiUrl" value="http://localhost:3001/api" placeholder="http://localhost:3001/api">
+        </div>
+        
+        <div class="section">
+            <label for="username">用户名</label>
+            <input type="text" id="username" placeholder="输入用户名" value="admin">
+        </div>
+        
+        <div class="section">
+            <label for="password">密码</label>
+            <input type="password" id="password" placeholder="输入密码">
+        </div>
+        
+        <div class="button-group">
+            <button class="btn-secondary" onclick="checkLocalData()">检查本地数据</button>
+            <button class="btn-primary" id="migrateBtn" onclick="startMigration()">开始迁移</button>
+        </div>
+        
+        <div id="status" class="status"></div>
+        
+        <div id="progress" class="progress">
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <div id="progressText" class="progress-text">准备中...</div>
+        </div>
+        
+        <div id="stats" class="stats" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-value" id="localCount">0</div>
+                <div class="stat-label">本地条目</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="migratedCount">0</div>
+                <div class="stat-label">已迁移</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let token = null;
+
+        function showStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+
+        function updateProgress(percent, text) {
+            const progressEl = document.getElementById('progress');
+            const fillEl = document.getElementById('progressFill');
+            const textEl = document.getElementById('progressText');
+            
+            progressEl.style.display = 'block';
+            fillEl.style.width = `${percent}%`;
+            textEl.textContent = text;
+        }
+
+        function hideProgress() {
+            document.getElementById('progress').style.display = 'none';
+        }
+
+        async function checkLocalData() {
+            try {
+                // 从 localStorage 读取数据
+                const userData = localStorage.getItem('cogniflow_user_data');
+                
+                if (!userData) {
+                    showStatus('❌ 未找到本地数据', 'error');
+                    return;
+                }
+
+                const data = JSON.parse(userData);
+                const itemCount = data.items ? data.items.length : 0;
+                
+                document.getElementById('localCount').textContent = itemCount;
+                document.getElementById('stats').style.display = 'grid';
+                
+                showStatus(`✅ 发现 ${itemCount} 条本地数据，可以开始迁移`, 'success');
+            } catch (error) {
+                showStatus(`❌ 读取本地数据失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function login() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showStatus('❌ 请输入用户名和密码', 'error');
+                return false;
+            }
+
+            updateProgress(10, '正在登录...');
+
+            try {
+                const response = await fetch(`${apiUrl}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!response.ok) {
+                    throw new Error('登录失败，请检查用户名和密码');
+                }
+
+                const data = await response.json();
+                token = data.token;
+                
+                showStatus('✅ 登录成功', 'success');
+                return true;
+            } catch (error) {
+                showStatus(`❌ 登录失败: ${error.message}`, 'error');
+                hideProgress();
+                return false;
+            }
+        }
+
+        async function migrateItems() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const userData = localStorage.getItem('cogniflow_user_data');
+            
+            if (!userData) {
+                throw new Error('未找到本地数据');
+            }
+
+            const data = JSON.parse(userData);
+            const items = data.items || [];
+            
+            if (items.length === 0) {
+                showStatus('⚠️ 没有需要迁移的数据', 'info');
+                return 0;
+            }
+
+            let successCount = 0;
+            let failCount = 0;
+
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                const percent = 20 + Math.floor((i / items.length) * 70);
+                updateProgress(percent, `正在迁移 ${i + 1}/${items.length}...`);
+
+                try {
+                    const response = await fetch(`${apiUrl}/items`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            raw_text: item.rawText || item.title,
+                            type: item.type || 'note',
+                            title: item.title,
+                            description: item.description || '',
+                            due_date: item.dueDate || null,
+                            priority: item.priority || 'medium',
+                            status: item.status || 'pending',
+                            tags: item.tags || [],
+                            entities: item.entities || {},
+                            url: item.url || null,
+                            url_title: item.urlTitle || null,
+                            url_summary: item.urlSummary || null,
+                            url_thumbnail: item.urlThumbnail || null,
+                            start_time: item.startTime || null,
+                            end_time: item.endTime || null,
+                            recurrence_rule: item.recurrenceRule || null
+                        })
+                    });
+
+                    if (response.ok) {
+                        successCount++;
+                        document.getElementById('migratedCount').textContent = successCount;
+                    } else {
+                        failCount++;
+                        console.error(`迁移失败: ${item.title}`, await response.text());
+                    }
+                } catch (error) {
+                    failCount++;
+                    console.error(`迁移失败: ${item.title}`, error);
+                }
+            }
+
+            return successCount;
+        }
+
+        async function startMigration() {
+            const btn = document.getElementById('migrateBtn');
+            btn.disabled = true;
+            
+            try {
+                // 1. 登录
+                const loginSuccess = await login();
+                if (!loginSuccess) {
+                    btn.disabled = false;
+                    return;
+                }
+
+                // 2. 迁移数据
+                updateProgress(20, '开始迁移数据...');
+                const migratedCount = await migrateItems();
+
+                // 3. 完成
+                updateProgress(100, '迁移完成！');
+                showStatus(`🎉 迁移成功！共迁移 ${migratedCount} 条数据`, 'success');
+                
+                setTimeout(() => {
+                    hideProgress();
+                }, 2000);
+            } catch (error) {
+                showStatus(`❌ 迁移失败: ${error.message}`, 'error');
+                hideProgress();
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // 页面加载时检查本地数据
+        window.addEventListener('load', () => {
+            checkLocalData();
+        });
+    </script>
+</body>
+</html>

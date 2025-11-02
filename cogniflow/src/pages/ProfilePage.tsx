@@ -12,13 +12,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useLocalAuth, userProfileApi, userSettingsApi } from '@/db/api';
+import { useAuth, userProfileApi, userSettingsApi } from '@/db/api';
 import { LocalStorageManager } from '@/services/localStorageManager';
 import { toast } from 'sonner';
 import { ArrowLeft, Save, Download, Upload, Trash2, RefreshCw } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user, logout } = useLocalAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   
   const [profileData, setProfileData] = useState({

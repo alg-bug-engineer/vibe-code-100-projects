@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { testUserSystem } from '@/utils/testUserSystem';
-import { localAuth, useLocalAuth } from '@/db/localAuth';
+import { auth, useAuth } from '@/db/api';
 import { userItemApi } from '@/db/userDataApi';
 import { LocalStorageManager } from '@/services/localStorageManager';
 import { clearAllLocalStorage } from '@/utils/clearStorage';
@@ -20,7 +20,7 @@ export default function DevToolsPage() {
   const [loading, setLoading] = useState(false);
   const [userStats, setUserStats] = useState<any>(null);
   const [accessGranted, setAccessGranted] = useState(false);
-  const { user, isAuthenticated } = useLocalAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // 检查访问权限
@@ -84,7 +84,7 @@ export default function DevToolsPage() {
 
     try {
       clearAllLocalStorage();
-      localAuth.logout();
+      auth.logout();
       setUserStats(null);
       alert('所有数据已清空');
       window.location.reload();

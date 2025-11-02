@@ -5,14 +5,14 @@
 
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useLocalAuth } from '@/db/localAuth';
+import { useAuth } from '@/db/apiAdapter';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated } = useLocalAuth();
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
 
   // 如果用户未登录，重定向到登录页面
@@ -33,7 +33,7 @@ interface PublicRouteProps {
 }
 
 export function PublicRoute({ children }: PublicRouteProps) {
-  const { isAuthenticated } = useLocalAuth();
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
 
   // 如果用户已登录，重定向到首页或之前访问的页面

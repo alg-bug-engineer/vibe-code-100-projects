@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cogniflow-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: cogniflow
+      POSTGRES_USER: cogniflow_user
+      POSTGRES_PASSWORD: cogniflow_password_2024
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+      - ./database/backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cogniflow_user -d cogniflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cogniflow-network
+
+  # pgAdmin - 数据库管理界面（可选）
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: cogniflow-pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_LISTEN_PORT: 80
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - cogniflow-network
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  cogniflow-network:
+    driver: bridge

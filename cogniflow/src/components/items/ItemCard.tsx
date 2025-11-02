@@ -11,6 +11,35 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 import EditItemDialog from './EditItemDialog';
 
+/**
+ * 将不带时区的ISO时间字符串解析为本地时间
+ * 避免时区转换问题
+ */
+const parseLocalDateTime = (dateTimeString: string): Date => {
+  // 如果字符串不包含时区信息，则当作本地时间解析
+  if (!dateTimeString.includes('Z') && !dateTimeString.includes('+') && !dateTimeString.includes('T')) {
+    // 只有日期，没有时间
+    return new Date(dateTimeString + 'T00:00:00');
+  }
+  
+  if (!dateTimeString.includes('Z') && !dateTimeString.match(/[+-]\d{2}:\d{2}$/)) {
+    // 有日期和时间，但没有时区信息，当作本地时间
+    // 例如: "2025-11-01T23:00:00" 应该被解析为本地的23:00，而不是UTC的23:00
+    const parts = dateTimeString.split(/[-T:]/);
+    return new Date(
+      parseInt(parts[0]), // year
+      parseInt(parts[1]) - 1, // month (0-indexed)
+      parseInt(parts[2]), // day
+      parseInt(parts[3] || '0'), // hour
+      parseInt(parts[4] || '0'), // minute
+      parseInt(parts[5] || '0')  // second
+    );
+  }
+  
+  // 有时区信息，正常解析
+  return new Date(dateTimeString);
+};
+
 interface ItemCardProps {
   item: Item;
   onUpdate?: () => void;
@@ -44,7 +73,7 @@ export default function ItemCard({ item, onUpdate }: ItemCardProps) {
   const isCompleted = item.status === 'completed';
   // 过期判断：只有截止日期在今天之前（不包括今天）才算过期
   const isOverdue = item.due_date && (() => {
-    const dueDate = new Date(item.due_date);
+    const dueDate = parseLocalDateTime(item.due_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0); // 设置为当天00:00:00
     dueDate.setHours(0, 0, 0, 0); // 设置为截止日期00:00:00
@@ -195,29 +224,29 @@ export default function ItemCard({ item, onUpdate }: ItemCardProps) {
                       {item.start_time && item.end_time ? (
                         <div className="space-y-1">
                           <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-                            {format(new Date(item.start_time), 'yyyy年MM月dd日 EEEE', { locale: zhCN })}
+                            {format(parseLocalDateTime(item.start_time), 'yyyy年MM月dd日 EEEE', { locale: zhCN })}
                           </div>
                           <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
                             <span className="font-medium">
-                              {format(new Date(item.start_time), 'HH:mm', { locale: zhCN })}
+                              {format(parseLocalDateTime(item.start_time), 'HH:mm', { locale: zhCN })}
                             </span>
                             <span className="text-blue-400">→</span>
                             <span className="font-medium">
-                              {format(new Date(item.end_time), 'HH:mm', { locale: zhCN })}
+                              {format(parseLocalDateTime(item.end_time), 'HH:mm', { locale: zhCN })}
                             </span>
                             <span className="text-xs text-blue-600 dark:text-blue-400 ml-1">
-                              ({Math.round((new Date(item.end_time).getTime() - new Date(item.start_time).getTime()) / 60000)}分钟)
+                              ({Math.round((parseLocalDateTime(item.end_time).getTime() - parseLocalDateTime(item.start_time).getTime()) / 60000)}分钟)
                             </span>
                           </div>
                         </div>
                       ) : item.due_date && (
                         <div className="space-y-1">
                           <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-                            {format(new Date(item.due_date), 'yyyy年MM月dd日 EEEE', { locale: zhCN })}
+                            {format(parseLocalDateTime(item.due_date), 'yyyy年MM月dd日 EEEE', { locale: zhCN })}
                           </div>
                           <div className="text-sm text-blue-700 dark:text-blue-300">
                             <span className="font-medium">
-                              {format(new Date(item.due_date), 'HH:mm', { locale: zhCN })}
+                              {format(parseLocalDateTime(item.due_date), 'HH:mm', { locale: zhCN })}
                             </span>
                           </div>
                         </div>
@@ -243,9 +272,9 @@ export default function ItemCard({ item, onUpdate }: ItemCardProps) {
                       {isOverdue && <AlertCircle className="h-3 w-3" />}
                       <Calendar className="h-3 w-3" />
                       <span className="font-medium">
-                        {isToday(new Date(item.due_date))
+                        {isToday(parseLocalDateTime(item.due_date))
                           ? '今天'
-                          : format(new Date(item.due_date), 'MM月dd日 HH:mm', { locale: zhCN })}
+                          : format(parseLocalDateTime(item.due_date), 'MM月dd日 HH:mm', { locale: zhCN })}
                       </span>
                     </div>
                   )}
@@ -284,7 +313,7 @@ export default function ItemCard({ item, onUpdate }: ItemCardProps) {
           )}
           <div className="pt-1 pl-8">
             <span className="text-xs text-gray-400 dark:text-gray-600">
-              {format(new Date(item.created_at), 'yyyy-MM-dd HH:mm', { locale: zhCN })}
+              {format(parseLocalDateTime(item.created_at), 'yyyy-MM-dd HH:mm', { locale: zhCN })}
             </span>
           </div>
         </CardContent>

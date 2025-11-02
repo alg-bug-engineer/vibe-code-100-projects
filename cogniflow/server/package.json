@@ -1,0 +1,21 @@
+{
+  "name": "cogniflow-server",
+  "version": "1.0.0",
+  "description": "CogniFlow API Server",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "tsx index.ts",
+    "start": "tsx index.ts"
+  },
+  "keywords": [
+    "cogniflow",
+    "api",
+    "postgresql"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "tsx": "^4.20.6"
+  }
+}

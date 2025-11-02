@@ -256,6 +256,17 @@ export async function processTextWithAI(text: string): Promise<AIProcessResult> 
     const currentDay = now.getDate();
     const dayOfWeek = ['日', '一', '二', '三', '四', '五', '六'][now.getDay()];
     
+    console.log('🔍 [AI处理] 开始处理文本:', text);
+    console.log('📅 [AI处理] 当前时间信息:', {
+      currentDate,
+      currentTime,
+      currentYear,
+      currentMonth,
+      currentDay,
+      dayOfWeek,
+      fullDate: now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
+    });
+    
     // 计算本周五的日期（如果今天是周五之后，则计算下周五）
     const currentDayIndex = now.getDay(); // 0=周日, 5=周五
     const daysUntilFriday = currentDayIndex <= 5 ? 5 - currentDayIndex : 7 - currentDayIndex + 5;
@@ -268,8 +279,13 @@ export async function processTextWithAI(text: string): Promise<AIProcessResult> 
 当前时间信息:
 - 当前日期: ${currentYear}年${currentMonth}月${currentDay}日 星期${dayOfWeek}
 - 当前时间: ${currentTime}
-- ISO格式基准: ${currentDate}
+- ISO格式基准日期: ${currentDate}
 - 本周五（或下周五）: ${thisFridayStr}
+
+⚠️ 重要提示：
+1. "今天" = ${currentDate}（${currentYear}年${currentMonth}月${currentDay}日）
+2. 时间必须基于 ${currentDate} 计算
+3. "今晚"、"今天晚上"、"今天十点" 都必须使用 ${currentDate}
 
 分析规则:
 1. type: **必填项**，判断类型。如果无法确定类型，**默认使用 'task'**
@@ -297,26 +313,36 @@ export async function processTextWithAI(text: string): Promise<AIProcessResult> 
 3. description: 提取详细描述
 
 4. due_date: **重要**提取时间信息,转换为ISO格式(YYYY-MM-DDTHH:mm:ss)
-   时间处理规则:
-   - **没有日期修饰词时,默认为今天** 
+   时间处理规则(**严格执行**):
+   
+   ⚠️ 核心规则：当前日期是 ${currentDate}
+   
+   - **"今天"、"今晚"、"今天上午"、"今天下午"、"今天晚上" 都必须使用 ${currentDate}**
      * "十点开会" → ${currentDate}T10:00:00
+     * "今天十点开会" → ${currentDate}T10:00:00
+     * "今晚十点开会" → ${currentDate}T22:00:00
+     * "今天晚上十点开会" → ${currentDate}T22:00:00
+     * "今天上午开会" → ${currentDate}T09:00:00
      * "下午三点" → ${currentDate}T15:00:00
      * "晚上8点" → ${currentDate}T20:00:00
-   - 有明确日期修饰词:
-     * "明天十点" → 计算明天的日期T10:00:00
+     
+   - 明确的未来日期修饰词:
+     * "明天十点" → 在${currentDate}基础上加1天
+     * "后天" → 在${currentDate}基础上加2天
      * "周五晚上" → ${thisFridayStr}T19:00:00
-     * "下周一" → 计算下周一的日期T09:00:00
+     * "下周一" → 计算下周一的日期
      * "3月15日" → ${currentYear}-03-15T00:00:00
    - 相对日期计算(**重要**):
      * "周一/星期一" → 本周一（如果已过，则下周一）
      * "周五/星期五" → 本周五（如果已过，则下周五）
      * 当前是星期${dayOfWeek}，所以"周五"应该是 ${thisFridayStr}
    - 时间转换:
-     * "早上/上午" → 09:00
+     * "早上/上午" → 09:00（如无具体时间）
      * "中午" → 12:00
-     * "下午" → 14:00
-     * "晚上" → 19:00
-     * "凌晨" → 01:00
+     * "下午" → 14:00（如无具体时间）
+     * "晚上" → 19:00（如无具体时间）
+     * "凌晨" → 01:00（如无具体时间）
+     * 如果有具体时间点（如"晚上十点"），使用具体时间（22:00）
    - 如果完全没有时间信息,返回null
 
 5. start_time 和 end_time: 对于event类型,提取开始和结束时间
@@ -352,7 +378,37 @@ export async function processTextWithAI(text: string): Promise<AIProcessResult> 
   "entities": {}
 }
 
-示例2 - 周几的日期:
+示例2 - 明确说"今天":
+输入: "今天晚上十点开会"
+当前日期: ${currentDate}
+{
+  "type": "event",
+  "title": "开会",
+  "description": "今天晚上十点开会",
+  "due_date": "${currentDate}T22:00:00",
+  "start_time": "${currentDate}T22:00:00",
+  "end_time": "${currentDate}T23:00:00",
+  "priority": "medium",
+  "tags": ["会议", "工作"],
+  "entities": {}
+}
+
+示例2.1 - 说"今晚":
+输入: "今晚十点开会"
+当前日期: ${currentDate}
+{
+  "type": "event",
+  "title": "开会",
+  "description": "今晚十点开会",
+  "due_date": "${currentDate}T22:00:00",
+  "start_time": "${currentDate}T22:00:00",
+  "end_time": "${currentDate}T23:00:00",
+  "priority": "medium",
+  "tags": ["会议", "工作"],
+  "entities": {}
+}
+
+示例3 - 周几的日期:
 输入: "周五晚上进行汇报"
 {
   "type": "event",
@@ -376,6 +432,8 @@ export async function processTextWithAI(text: string): Promise<AIProcessResult> 
       },
       onComplete: () => {
         try {
+          console.log('📥 [AI处理] 收到AI原始响应:', fullResponse);
+          
           let jsonStr = fullResponse.trim();
           if (jsonStr.startsWith('```json')) {
             jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '');
@@ -383,7 +441,16 @@ export async function processTextWithAI(text: string): Promise<AIProcessResult> 
             jsonStr = jsonStr.replace(/```\n?/g, '');
           }
 
+          console.log('🔧 [AI处理] 清理后的JSON:', jsonStr);
+          
           const result = JSON.parse(jsonStr);
+          
+          console.log('✅ [AI处理] 解析成功:', result);
+          console.log('📅 [AI处理] 解析的日期:', {
+            due_date: result.due_date,
+            start_time: result.start_time,
+            end_time: result.end_time
+          });
 
           // 确保类型有效，如果为空或无效，默认使用 'task'
           const validTypes: ItemType[] = ['task', 'event', 'note', 'data', 'url'];
@@ -402,9 +469,17 @@ export async function processTextWithAI(text: string): Promise<AIProcessResult> 
             entities: result.entities || {}
           };
 
+          console.log('🎯 [AI处理] 最终处理结果:', processedResult);
+          console.log('📅 [AI处理] 最终日期时间:', {
+            due_date: processedResult.due_date,
+            start_time: processedResult.start_time,
+            end_time: processedResult.end_time
+          });
+
           resolve(processedResult);
         } catch (error) {
-          console.error('解析AI响应失败:', error, fullResponse);
+          console.error('❌ [AI处理] 解析AI响应失败:', error);
+          console.error('📄 [AI处理] 原始响应:', fullResponse);
           // 解析失败时，默认使用 'task' 类型
           resolve({
             type: 'task',
@@ -420,7 +495,7 @@ export async function processTextWithAI(text: string): Promise<AIProcessResult> 
         }
       },
       onError: (error: Error) => {
-        console.error('AI处理失败:', error);
+        console.error('❌ [AI处理] AI处理失败:', error);
         reject(error);
       }
     });

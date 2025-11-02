@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { processTextWithAI } from '@/utils/ai';
 import { detectURL, isMainlyURL, fetchURLContent } from '@/utils/urlProcessor';
 import { detectQueryIntent, removeQueryPrefix, parseQueryIntent, generateQuerySummary } from '@/utils/queryProcessor';
-import { itemApi, localAuth } from '@/db/api';
+import { itemApi, auth } from '@/db/api';
 import { QueryResultPanel } from '@/components/query/QueryResultPanel';
 import type { Item } from '@/types/types';
 
@@ -94,7 +94,7 @@ export default function QuickInput({
 
     // 异步处理,不阻塞UI
     try {
-      const user = localAuth.getCurrentUser();
+      const user = auth.getCurrentUser();
       if (!user) {
         toast.error('用户未初始化');
         onProcessingError?.(processingId);

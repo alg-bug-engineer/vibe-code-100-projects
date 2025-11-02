@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useLocalAuth, type RegisterUserData } from '@/db/localAuth';
+import { useAuth } from '@/db/apiAdapter';
+import type { RegisterUserData } from '@/db/localAuth';
 import { toast } from 'sonner';
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
@@ -36,7 +37,7 @@ export function RegisterPanel({
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { register, isAuthenticated } = useLocalAuth();
+  const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // 如果已经登录，直接跳转到首页
