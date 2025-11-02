@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import pool from './db/pool.js';
 import itemsRouter from './routes/items.js';
 import usersRouter from './routes/users.js';
+import templatesRouter from './routes/templates.js';
 import { authMiddleware } from './middleware/auth.js';
 
 // 加载环境变量
@@ -62,6 +63,7 @@ app.use('/api/auth', usersRouter); // 注册和登录
 // 需要认证的路由
 app.use('/api/items', authMiddleware, itemsRouter);
 app.use('/api/users', authMiddleware, usersRouter);
+app.use('/api/templates', authMiddleware, templatesRouter);
 
 // 错误处理中间件
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

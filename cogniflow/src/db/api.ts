@@ -19,6 +19,9 @@ export {
   tagApi 
 } from './userDataApi';
 
+// 模板 API
+export { templateApi } from './templateApi';
+
 // 认证系统 - 导出 localAuth 用于向后兼容（已废弃，请使用 useAuth）
 export { localAuth, useLocalAuth } from './localAuth';
 

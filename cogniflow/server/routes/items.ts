@@ -299,6 +299,47 @@ router.post('/query', async (req: AuthRequest, res, next) => {
 });
 
 /**
+ * 搜索条目
+ * GET /api/items/search?q=关键词
+ */
+router.get('/search', async (req: AuthRequest, res, next) => {
+  try {
+    const { q } = req.query;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: '未授权' });
+    }
+
+    if (!q || typeof q !== 'string') {
+      return res.status(400).json({ error: '缺少搜索关键词' });
+    }
+
+    // 使用全文搜索
+    const sql = `
+      SELECT * FROM items
+      WHERE user_id = $1
+        AND deleted_at IS NULL
+        AND archived_at IS NULL
+        AND (
+          title ILIKE $2 OR
+          description ILIKE $2 OR
+          raw_text ILIKE $2 OR
+          $3 = ANY(tags)
+        )
+      ORDER BY created_at DESC
+      LIMIT 100
+    `;
+
+    const searchPattern = `%${q}%`;
+    const result = await query(sql, [userId, searchPattern, q]);
+    res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * 获取日历条目
  * GET /api/items/calendar?start=2025-01-01&end=2025-01-31
  */
@@ -380,6 +421,10 @@ router.get('/history', async (req: AuthRequest, res, next) => {
       return res.status(401).json({ error: '未授权' });
     }
 
+    // 为日期添加时间部分以确保完整的日期范围
+    const startDateTime = `${start} 00:00:00`;
+    const endDateTime = `${end} 23:59:59`;
+
     const sql = `
       SELECT * FROM items
       WHERE user_id = $1
@@ -388,7 +433,7 @@ router.get('/history', async (req: AuthRequest, res, next) => {
       ORDER BY created_at DESC
     `;
 
-    const result = await query(sql, [userId, start, end]);
+    const result = await query(sql, [userId, startDateTime, endDateTime]);
     res.json(result.rows);
   } catch (error) {
     next(error);
